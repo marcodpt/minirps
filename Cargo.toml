@@ -1,0 +1,29 @@
+[package]
+name = "minirps"
+version = "0.1.0"
+edition = "2021"
+authors = ["Marco Di Pillo Tomic <marcodpt@protonmail.com>"]
+license = "MIT"
+description = "Mini reverse proxy server written in rust"
+readme = "README.md"
+homepage = "https://github.com/marcodpt/minirps"
+repository = "https://github.com/marcodpt/minirps"
+keywords = [
+  "reverse-proxy",
+  "server",
+  "single-binary",
+  "axum",
+  "minijinja"
+]
+categories = ["hardware-support"]
+
+[dependencies]
+axum = "0"
+tokio = { version = "1", features = ["full"] }
+clap = {version = "4", features = ["derive"]}
+toml = "0"
+serde = "1"
+serde_derive = "1"
+
+[profile.release]
+opt-level = 3
