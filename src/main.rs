@@ -1,5 +1,6 @@
-use std::fs::{write, read_to_string};
-use std::path::PathBuf;
+use std::io;
+use std::fs::{write, read_to_string, read_dir};
+use std::path::{Path, PathBuf};
 use std::collections::HashMap;
 use std::process::exit;
 use serde_derive::Deserialize;
@@ -81,7 +82,9 @@ fn main() {
             } else {
                 match write(p, include_str!("../tests/new.toml")) {
                     Ok(_) => {
-                        println!("New config file generated: `{}`", p.display());
+                        println!("New config file generated: `{}`",
+                            p.display()
+                        );
                     }
                     Err(_) => {
                         println!("Fail to write file: `{}`", p.display());
@@ -90,11 +93,11 @@ fn main() {
             }
         }
         Commands::Start { path } => {
-            println!("Start {}", path.display());
-            let data = match read_to_string(path) {
+            let p = path.as_path();
+            let data = match read_to_string(p) {
                 Ok(data) => data,
                 Err(_) => {
-                    eprintln!("Could not read file `{}`", path.display());
+                    eprintln!("Could not read file `{}`", p.display());
                     exit(1);
                 }
             };
@@ -102,12 +105,39 @@ fn main() {
             let config: Config = match from_str(&data) {
                 Ok(data) => data,
                 Err(_) => {
-                    eprintln!("Unable to load data from `{}`", path.display());
+                    eprintln!("Unable to load data from `{}`", p.display());
                     exit(1);
                 }
             };
 
-            println!("{:#?}", config);
+            let dir = p.parent().unwrap();
+
+            fn build_assets (dir: &Path) -> io::Result<()> {
+                for entry in read_dir(dir)? {
+                    let entry = entry?;
+                    let path = entry.path();
+                    if path.is_dir() {
+                        build_assets(&path)?;
+                    } else {
+                        println!("{}", path.display());
+                    }
+                }
+                Ok(())
+            }
+
+            if config.assets.is_some() {
+                let assets = dir.join(config.assets.unwrap());
+                match build_assets(&assets) {
+                    Ok(()) => {}
+                    Err(_) => {
+                        eprintln!("Unable to read assets dir: `{}`. Skiping!",
+                            assets.display()
+                        );
+                    }
+                }
+            }
+
+            //println!("{:#?}", config);
         }
     }
 }
