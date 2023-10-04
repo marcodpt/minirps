@@ -1,11 +1,13 @@
 use std::io;
-use std::fs::{write, read_to_string, read_dir};
+use std::fs::{write, read, read_to_string, read_dir};
 use std::path::{Path, PathBuf};
 use std::collections::HashMap;
 use std::process::exit;
 use serde_derive::Deserialize;
 use clap::{Parser, Subcommand};
-use toml::from_str;
+use toml;
+use mime_guess;
+use axum::{routing::get, Router, Server};
 
 #[derive(Deserialize, Debug)]
 struct Request {
@@ -64,7 +66,8 @@ enum Commands {
     },
 }
 
-fn main() {
+#[tokio::main]
+async fn main() {
     let cli = Cli::parse();
 
     match &cli.command {
@@ -102,7 +105,7 @@ fn main() {
                 }
             };
 
-            let config: Config = match from_str(&data) {
+            let config: Config = match toml::from_str(&data) {
                 Ok(data) => data,
                 Err(_) => {
                     eprintln!("Unable to load data from `{}`", p.display());
@@ -112,30 +115,48 @@ fn main() {
 
             let dir = p.parent().unwrap();
 
-            fn build_assets (dir: &Path) -> io::Result<()> {
+            fn build_assets (
+                base: &Path, dir: &Path, app: mut Router
+            ) -> io::Result<Router> {
                 for entry in read_dir(dir)? {
                     let entry = entry?;
                     let path = entry.path();
                     if path.is_dir() {
-                        build_assets(&path)?;
+                        app = build_assets(base, &path, app)?;
                     } else {
                         println!("{}", path.display());
+                        println!("{:#?}", mime_guess::from_path(path).first_raw());
+                        let route = match path.strip_prefix(base) {
+                            Ok(route) => route,
+                            Err(_) => &path
+                        };
+                        app = app.route(route.to_str().unwrap(), read(path)?);
                     }
                 }
-                Ok(())
+                Ok(app)
             }
+
+            let mut app = Router::new();
+            app = app.route("/", get("Hello, World!"));
 
             if config.assets.is_some() {
                 let assets = dir.join(config.assets.unwrap());
-                match build_assets(&assets) {
-                    Ok(()) => {}
+                app = match build_assets(&dir, &assets) {
+                    Ok(app) => app
                     Err(_) => {
-                        eprintln!("Unable to read assets dir: `{}`. Skiping!",
+                        eprintln!("Unable to read assets dir: `{}`",
                             assets.display()
                         );
+                        exit(1);
                     }
-                }
+                };
             }
+
+            // run it with hyper on localhost:3000
+            Server::bind(&"0.0.0.0:3000".parse().unwrap())
+                .serve(app.into_make_service())
+                .await
+                .unwrap();
 
             //println!("{:#?}", config);
         }

@@ -9,13 +9,15 @@ Mini reverse proxy server written in rust
 
 ## TODO
  - implement assets server
- - implement redirect server
- - add minijinja to redirect server
  - add https
  - add cors
+ - implement redirect server
+ - add minijinja to redirect server
  - parse body response json
  - add tests
+ - check translations and write docs
+ - publish first version
+
+## NEXT
  - hot reload server in case of file changes
  - add cache rules
- - check translations
- - publish first version

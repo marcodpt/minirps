@@ -24,6 +24,7 @@ clap = {version = "4", features = ["derive"]}
 toml = "0"
 serde = "1"
 serde_derive = "1"
+mime_guess = "2"
 
 [profile.release]
 opt-level = 3
