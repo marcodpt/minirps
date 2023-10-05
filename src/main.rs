@@ -1,4 +1,4 @@
-use std::io;
+use std::error::Error;
 use std::fs::{write, read, read_to_string, read_dir};
 use std::path::{Path, PathBuf};
 use std::collections::HashMap;
@@ -7,7 +7,12 @@ use serde_derive::Deserialize;
 use clap::{Parser, Subcommand};
 use toml;
 use mime_guess;
-use axum::{routing::get, Router, Server};
+use axum::{
+    routing::get,
+    Router,
+    Server,
+    http::header::{HeaderMap, CONTENT_TYPE}
+};
 
 #[derive(Deserialize, Debug)]
 struct Request {
@@ -66,6 +71,44 @@ enum Commands {
     },
 }
 
+fn build_assets (
+    base: &Path, dir: &Path, mut app: Router
+) -> Result<Router, Box<dyn Error>> {
+    for entry in read_dir(dir)? {
+        let entry = entry?;
+        let path = entry.path();
+        if path.is_dir() {
+            app = build_assets(base, &path, app)?;
+        } else {
+            let route = match path.strip_prefix(&base) {
+                Ok(route) => Path::new("/").join(route),
+                Err(_) => path.clone()
+            };
+            let e = "Unexpected option none";
+            let name = route.file_name().ok_or(e)?.to_str().ok_or(e)?;
+            let root = route.parent().ok_or(e)?.to_str().ok_or(e)?;
+            let route = route.to_str().ok_or(e)?;
+            let mut headers = HeaderMap::new();
+            match mime_guess::from_path(&path).first_raw() {
+                Some(value) => {
+                    headers.insert(CONTENT_TYPE, value.parse()?);
+                },
+                None => {}
+            };
+            let body = read(&path)?;
+
+            if name == "index.html" {
+                app = app.route(root,
+                    get((headers.clone(), body.clone()))
+                );
+            }
+
+            app = app.route(route, get((headers, body)));
+        }
+    }
+    Ok(app)
+}
+
 #[tokio::main]
 async fn main() {
     let cli = Cli::parse();
@@ -115,34 +158,12 @@ async fn main() {
 
             let dir = p.parent().unwrap();
 
-            fn build_assets (
-                base: &Path, dir: &Path, app: mut Router
-            ) -> io::Result<Router> {
-                for entry in read_dir(dir)? {
-                    let entry = entry?;
-                    let path = entry.path();
-                    if path.is_dir() {
-                        app = build_assets(base, &path, app)?;
-                    } else {
-                        println!("{}", path.display());
-                        println!("{:#?}", mime_guess::from_path(path).first_raw());
-                        let route = match path.strip_prefix(base) {
-                            Ok(route) => route,
-                            Err(_) => &path
-                        };
-                        app = app.route(route.to_str().unwrap(), read(path)?);
-                    }
-                }
-                Ok(app)
-            }
-
             let mut app = Router::new();
-            app = app.route("/", get("Hello, World!"));
 
             if config.assets.is_some() {
                 let assets = dir.join(config.assets.unwrap());
-                app = match build_assets(&dir, &assets) {
-                    Ok(app) => app
+                app = match build_assets(&assets, &assets, app) {
+                    Ok(app) => app,
                     Err(_) => {
                         eprintln!("Unable to read assets dir: `{}`",
                             assets.display()
@@ -152,7 +173,7 @@ async fn main() {
                 };
             }
 
-            // run it with hyper on localhost:3000
+            println!("Server started at http://localhost:3000");
             Server::bind(&"0.0.0.0:3000".parse().unwrap())
                 .serve(app.into_make_service())
                 .await

@@ -8,7 +8,6 @@ Mini reverse proxy server written in rust
 ```
 
 ## TODO
- - implement assets server
  - add https
  - add cors
  - implement redirect server
@@ -16,8 +15,6 @@ Mini reverse proxy server written in rust
  - parse body response json
  - add tests
  - check translations and write docs
- - publish first version
-
-## NEXT
  - hot reload server in case of file changes
  - add cache rules
+ - publish first version
