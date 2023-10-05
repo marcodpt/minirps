@@ -9,4 +9,7 @@ port = 3000
 
 # Path to certificate file relative to this file.
 
+cert = "assets/cert.pem"
+key = "assets/key.pem"
+
 assets = "../hippo/docs"

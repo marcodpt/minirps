@@ -18,8 +18,9 @@ keywords = [
 categories = ["hardware-support"]
 
 [dependencies]
-axum = "0"
 tokio = { version = "1", features = ["full"] }
+axum = "0"
+axum-server = { version = "0", features = ["tls-rustls"] }
 clap = {version = "4", features = ["derive"]}
 toml = "0"
 serde = "1"

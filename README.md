@@ -1,4 +1,4 @@
-# ![](favicon.ico)  Mini RPS
+# ![](assets/favicon.ico)  Mini RPS
 Mini reverse proxy server written in rust
 
 ## Usage
@@ -8,7 +8,6 @@ Mini reverse proxy server written in rust
 ```
 
 ## TODO
- - add https
  - add cors
 
  - implement redirect server
@@ -16,7 +15,7 @@ Mini reverse proxy server written in rust
  - parse body response json
 
  - add cache rules
+ - add tests
  - check translations and write docs
  - hot reload server in case of file changes
- - add tests
  - publish first version

@@ -13,6 +13,7 @@ use axum::{
     Server,
     http::header::{HeaderMap, CONTENT_TYPE}
 };
+use axum_server::tls_rustls::RustlsConfig;
 
 #[derive(Deserialize, Debug)]
 struct Request {
@@ -46,29 +47,6 @@ struct Config {
     assets: Option<String>, 
     templates: Option<String>, 
     routes: Option<Vec<Route>>
-}
-
-#[derive(Parser)]
-#[command(author, version, about, long_about = None)]
-struct Cli {
-    #[command(subcommand)]
-    command: Commands,
-}
-
-#[derive(Subcommand)]
-enum Commands {
-    /// Generate a config file sample
-    New {
-        /// Path for the generated config file
-        #[arg(value_name = "FILE", required = true)]
-        path: PathBuf,
-    },
-    /// Starts the server based on a given config file
-    Start {
-        /// Path for the config file
-        #[arg(value_name = "FILE", required = true)]
-        path: PathBuf,
-    },
 }
 
 fn ok<T> (data: Option<T>) -> Result<T, Box<dyn Error>> {
@@ -143,13 +121,46 @@ async fn start_server (path: &PathBuf) -> Result<(), Box<dyn Error>> {
     let port = config.port.unwrap_or(3000);
     let addr = SocketAddr::from(([127, 0, 0, 1], port));
 
-    //println!("{:#?}", config);
-    println!("Server started at http://localhost:{}", port);
-    Server::bind(&addr)
-        .serve(app.into_make_service())
-        .await?;
+    if config.cert.is_some() && config.key.is_some() {
+        let cert = dir.join(ok(config.cert)?);
+        let key = dir.join(ok(config.key)?);
+        let tls = RustlsConfig::from_pem(read(cert)?, read(key)?).await?;
+
+        println!("Server started at https://localhost:{}", port);
+        axum_server::bind_rustls(addr, tls)
+            .serve(app.into_make_service())
+            .await?;
+    } else {
+        println!("Server started at http://localhost:{}", port);
+        Server::bind(&addr)
+            .serve(app.into_make_service())
+            .await?;
+    }
 
     Ok(())
+}
+
+#[derive(Parser)]
+#[command(author, version, about, long_about = None)]
+struct Cli {
+    #[command(subcommand)]
+    command: Commands,
+}
+
+#[derive(Subcommand)]
+enum Commands {
+    /// Generate a config file sample
+    New {
+        /// Path for the generated config file
+        #[arg(value_name = "FILE", required = true)]
+        path: PathBuf,
+    },
+    /// Starts the server based on a given config file
+    Start {
+        /// Path for the config file
+        #[arg(value_name = "FILE", required = true)]
+        path: PathBuf,
+    },
 }
 
 #[tokio::main]
