@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/water.css@2/out/water.css"
+    />
+    <title>CORS test</title>
+  </head>
+  <body>
+    <h1>CORS test</h1>
+    <p style="white-space:pre-wrap"></p>
+    <script>
+      fetch('https://localhost:3000/new.toml')
+        .then(response => response.text())
+        .then(data => document.body
+          .querySelector('p')
+          .textContent = data
+        )
+    </script>
+  </body>
+</html>

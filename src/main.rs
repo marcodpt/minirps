@@ -7,11 +7,12 @@ use serde_derive::Deserialize;
 use clap::{Parser, Subcommand};
 use toml;
 use mime_guess;
+use tower_http::cors::{Any, CorsLayer};
 use axum::{
     routing::get,
     Router,
     Server,
-    http::header::{HeaderMap, CONTENT_TYPE}
+    http::header::{HeaderMap, HeaderValue, CONTENT_TYPE}
 };
 use axum_server::tls_rustls::RustlsConfig;
 
@@ -116,6 +117,22 @@ async fn start_server (path: &PathBuf) -> Result<(), Box<dyn Error>> {
     if config.assets.is_some() {
         let assets = dir.join(ok(config.assets)?);
         app = build_assets(&assets, &assets, app)?;
+    }
+
+    if config.cors.is_some() {
+        let origins = ok(config.cors)?;
+
+        let mut layer = CorsLayer::new()
+            .allow_methods(Any);
+
+        if origins.len() == 0 {
+            layer = layer.allow_origin(Any)
+        }
+        for origin in origins {
+            layer = layer.allow_origin(origin.parse::<HeaderValue>()?);
+        }
+
+        app = app.layer(layer);
     }
 
     let port = config.port.unwrap_or(3000);

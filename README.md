@@ -8,8 +8,6 @@ Mini reverse proxy server written in rust
 ```
 
 ## TODO
- - add cors
-
  - implement redirect server
  - add minijinja to redirect server
  - parse body response json
