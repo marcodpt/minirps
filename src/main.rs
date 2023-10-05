@@ -2,7 +2,7 @@ use std::error::Error;
 use std::fs::{write, read, read_to_string, read_dir};
 use std::path::{Path, PathBuf};
 use std::collections::HashMap;
-use std::process::exit;
+use std::net::SocketAddr;
 use serde_derive::Deserialize;
 use clap::{Parser, Subcommand};
 use toml;
@@ -71,6 +71,25 @@ enum Commands {
     },
 }
 
+fn ok<T> (data: Option<T>) -> Result<T, Box<dyn Error>> {
+    data.ok_or("Unexpected option none".into())
+}
+
+fn assert (test: bool, msg: &str) -> Result<(), Box<dyn Error>> {
+    if test {Ok(())} else {Err(msg.into())}
+}
+
+fn gen_config (path: &PathBuf) -> Result<(), Box<dyn Error>> {
+    let p = path.as_path();
+    assert(!p.exists(), &format!("File already exists `{}`", p.display()))?;
+    let e = format!("File must have .toml extension `{}`", p.display());
+    let ext = p.extension().ok_or(e.clone())?;
+    assert(ext == "toml", &e)?;
+    write(p, include_str!("../tests/new.toml"))?;
+    println!("New config file generated: `{}`", p.display());
+    Ok(())
+}
+
 fn build_assets (
     base: &Path, dir: &Path, mut app: Router
 ) -> Result<Router, Box<dyn Error>> {
@@ -84,10 +103,9 @@ fn build_assets (
                 Ok(route) => Path::new("/").join(route),
                 Err(_) => path.clone()
             };
-            let e = "Unexpected option none";
-            let name = route.file_name().ok_or(e)?.to_str().ok_or(e)?;
-            let root = route.parent().ok_or(e)?.to_str().ok_or(e)?;
-            let route = route.to_str().ok_or(e)?;
+            let name = ok(ok(route.file_name())?.to_str())?;
+            let root = ok(ok(route.parent())?.to_str())?;
+            let route = ok(route.to_str())?;
             let mut headers = HeaderMap::new();
             match mime_guess::from_path(&path).first_raw() {
                 Some(value) => {
@@ -109,77 +127,37 @@ fn build_assets (
     Ok(app)
 }
 
+async fn start_server (path: &PathBuf) -> Result<(), Box<dyn Error>> {
+    let p = path.as_path();
+    let data = read_to_string(p)?;
+    let config: Config = toml::from_str(&data)?;
+    let dir = ok(p.parent())?;
+
+    let mut app = Router::new();
+
+    if config.assets.is_some() {
+        let assets = dir.join(ok(config.assets)?);
+        app = build_assets(&assets, &assets, app)?;
+    }
+
+    let port = config.port.unwrap_or(3000);
+    let addr = SocketAddr::from(([127, 0, 0, 1], port));
+
+    //println!("{:#?}", config);
+    println!("Server started at http://localhost:{}", port);
+    Server::bind(&addr)
+        .serve(app.into_make_service())
+        .await?;
+
+    Ok(())
+}
+
 #[tokio::main]
-async fn main() {
+async fn main() -> Result<(), Box<dyn Error>> {
     let cli = Cli::parse();
 
     match &cli.command {
-        Commands::New { path } => {
-            let p = path.as_path();
-            if p.exists() {
-                eprintln!("File already exists `{}`", p.display());
-                exit(1);
-            } else if
-                p.extension().is_none() ||
-                p.extension().unwrap() != "toml"
-            {
-                eprintln!("File must have .toml extension `{}`", p.display());
-                exit(1);
-            } else {
-                match write(p, include_str!("../tests/new.toml")) {
-                    Ok(_) => {
-                        println!("New config file generated: `{}`",
-                            p.display()
-                        );
-                    }
-                    Err(_) => {
-                        println!("Fail to write file: `{}`", p.display());
-                    }
-                }
-            }
-        }
-        Commands::Start { path } => {
-            let p = path.as_path();
-            let data = match read_to_string(p) {
-                Ok(data) => data,
-                Err(_) => {
-                    eprintln!("Could not read file `{}`", p.display());
-                    exit(1);
-                }
-            };
-
-            let config: Config = match toml::from_str(&data) {
-                Ok(data) => data,
-                Err(_) => {
-                    eprintln!("Unable to load data from `{}`", p.display());
-                    exit(1);
-                }
-            };
-
-            let dir = p.parent().unwrap();
-
-            let mut app = Router::new();
-
-            if config.assets.is_some() {
-                let assets = dir.join(config.assets.unwrap());
-                app = match build_assets(&assets, &assets, app) {
-                    Ok(app) => app,
-                    Err(_) => {
-                        eprintln!("Unable to read assets dir: `{}`",
-                            assets.display()
-                        );
-                        exit(1);
-                    }
-                };
-            }
-
-            println!("Server started at http://localhost:3000");
-            Server::bind(&"0.0.0.0:3000".parse().unwrap())
-                .serve(app.into_make_service())
-                .await
-                .unwrap();
-
-            //println!("{:#?}", config);
-        }
+        Commands::New { path } => gen_config(path),
+        Commands::Start { path } => start_server(path).await
     }
 }

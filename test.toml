@@ -4,10 +4,8 @@
 cors = []
 
 # Port to run the app.
-# If no port is passed then:
-# it will use port 443 if a certificate is passed
-# otherwise it will use port 80
-port = 8443
+# If no port is passed then it will use port 3000 by default.
+port = 3000
 
 # Path to certificate file relative to this file.
 
