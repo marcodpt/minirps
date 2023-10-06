@@ -12,8 +12,10 @@ Mini reverse proxy server written in rust
  - add minijinja to redirect server
  - parse body response json
 
- - add cache rules
  - add tests
  - check translations and write docs
- - hot reload server in case of file changes
  - publish first version
+
+## NEXT
+ - add cache rules
+ - hot reload server in case of file changes

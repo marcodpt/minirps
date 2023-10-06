@@ -4,42 +4,50 @@ use std::path::{Path, PathBuf};
 use std::collections::HashMap;
 use std::net::SocketAddr;
 use serde_derive::Deserialize;
+use serde_json::{Value, json};
 use clap::{Parser, Subcommand};
 use toml;
 use mime_guess;
 use tower_http::cors::{Any, CorsLayer};
 use axum::{
-    routing::get,
+    extract::{OriginalUri, Path as Params, Query, Extension},
+    routing::{get, on, MethodFilter},
     Router,
     Server,
-    http::header::{HeaderMap, HeaderValue, CONTENT_TYPE}
+    body::Body,
+    http::header::{
+        HeaderMap, HeaderValue, CONTENT_TYPE
+    }}
 };
 use axum_server::tls_rustls::RustlsConfig;
+use minijinja::{Environment, path_loader};
+use reqwest::{Request, RequestBuilder, Client};
 
-#[derive(Deserialize, Debug)]
-struct Request {
-    method: Option<String>,
+#[derive(Deserialize, Clone, Debug)]
+struct Req {
+    name: String,
+    method: String,
     headers: Option<HashMap<String, String>>,
-    url: Option<String>,
+    url: String,
     body: Option<String>
 }
 
-#[derive(Deserialize, Debug)]
-struct Response {
+#[derive(Deserialize, Clone, Debug)]
+struct Res {
     status: Option<String>,
     headers: Option<HashMap<String, String>>,
     body: Option<String>
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Clone, Debug)]
 struct Route {
     method: String,
     path: String,
-    request: Option<Request>,
-    response: Option<Response>
+    requests: Option<Vec<Req>>,
+    response: Option<Res>
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Clone, Debug)]
 struct Config {
     cors: Option<Vec<String>>,
     port: Option<u16>,
@@ -56,6 +64,23 @@ fn ok<T> (data: Option<T>) -> Result<T, Box<dyn Error>> {
 
 fn assert (test: bool, msg: &str) -> Result<(), Box<dyn Error>> {
     if test {Ok(())} else {Err(msg.into())}
+}
+
+fn resolve_method (method: &str) -> Result<MethodFilter, Box<dyn Error>> {
+    let res = match method.to_ascii_uppercase().as_str() {
+        "GET" => MethodFilter::GET,
+        "POST" => MethodFilter::POST,
+        "DELETE" => MethodFilter::DELETE,
+        "PUT" => MethodFilter::PUT,
+        "PATCH" => MethodFilter::PATCH,
+        "HEAD" => MethodFilter::HEAD,
+        "OPTIONS" => MethodFilter::OPTIONS,
+        "TRACE" => MethodFilter::TRACE,
+        _ => {
+            return Err(format!("Unknown method: {}", method).into());
+        }
+    };
+    Ok(res)
 }
 
 fn gen_config (path: &PathBuf) -> Result<(), Box<dyn Error>> {
@@ -95,9 +120,7 @@ fn build_assets (
             let body = read(&path)?;
 
             if name == "index.html" {
-                app = app.route(root,
-                    get((headers.clone(), body.clone()))
-                );
+                app = app.route(root, get((headers.clone(), body.clone())));
             }
 
             app = app.route(route, get((headers, body)));
@@ -106,17 +129,95 @@ fn build_assets (
     Ok(app)
 }
 
+async fn handler (
+    OriginalUri(url): OriginalUri,
+    Params(params): Params<HashMap<String, String>>,
+    Query(vars): Query<Value>,
+    Extension(env): Extension<Environment>,
+    Extension(config): Extension<Config>,
+    headers: HeaderMap,
+    body: String,
+) -> Result<String, Box<dyn Error>> {
+    let mut context = json!({}); 
+    let x = context.as_object_mut().unwrap();
+    x.insert(String::from("url"), json!(url.to_string()));
+    x.insert(String::from("schema"), json!(url.scheme_str()));
+    x.insert(String::from("host"), json!(url.host()));
+    x.insert(String::from("port"), json!(url.port_u16()));
+    x.insert(String::from("path"), json!(url.path()));
+    x.insert(String::from("query"), json!(url.query()));
+    x.insert(String::from("headers"), json!({}));
+    let h = x["headers"].as_object_mut().unwrap();
+    for key in headers.keys() {
+        let v = headers.get(key).unwrap().to_str().unwrap();
+        h.insert(key.to_string(), json!(v));
+    }
+    x.insert(String::from("params"), json!(params));
+    x.insert(String::from("vars"), vars);
+    x.insert(String::from("body"), json!(body));
+    x.insert(String::from("json"), match serde_json::from_str(&body) {
+        Ok(data) => data,
+        Err(_) => json!(body)
+    });
+    x.insert(String::from("data"), json!({}));
+
+    /*struct Req {
+        name: String,
+        method: String,
+        headers: Option<HashMap<String, String>>,
+        url: String,
+        body: Option<String>
+    }*/
+    for route in config.routes.unwrap_or(Vec::new()) {
+        for req in route.requests.unwrap_or(Vec::new()) {
+            let r = RequestBuilder::from_parts(Client::new(), Request::new());
+            if req.headers.is_some() {
+                let headers = ok(req.headers)?;
+                for (key, value) in headers {
+                    r.header(key, value);
+                }
+            }
+            if req.body.is_some() {
+                let body = ok(req.body)?;
+                r.body(body);
+            }
+            println!("{:#?}", req);
+        }
+    }
+
+    Ok(String::new())
+}
+
 async fn start_server (path: &PathBuf) -> Result<(), Box<dyn Error>> {
     let p = path.as_path();
     let data = read_to_string(p)?;
     let config: Config = toml::from_str(&data)?;
     let dir = ok(p.parent())?;
+    let mut env = Environment::new();
 
     let mut app = Router::new();
+
+    app = app.layer(Extension(config.clone()));
+
+    if config.templates.is_some() {
+        let templates = dir.join(ok(config.templates)?);
+        env.set_loader(path_loader(templates));
+    }
+    app = app.layer(Extension(env));
 
     if config.assets.is_some() {
         let assets = dir.join(ok(config.assets)?);
         app = build_assets(&assets, &assets, app)?;
+    }
+
+    if config.routes.is_some() {
+        let routes = ok(config.routes)?;
+
+        for route in routes {
+            app = app.route(&route.path,
+                on(resolve_method(&route.method)?, handler)
+            );
+        }
     }
 
     if config.cors.is_some() {
