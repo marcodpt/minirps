@@ -10,13 +10,12 @@ use toml;
 use mime_guess;
 use tower_http::cors::{Any, CorsLayer};
 use axum::{
-    extract::{OriginalUri, Path as Params, Query, Extension},
+    extract::{OriginalUri, Path as Params, Query, Extension, MatchedPath},
     routing::{get, on, MethodFilter},
     Router,
     Server,
-    body::Body,
-    http::header::{
-        HeaderMap, HeaderValue, CONTENT_TYPE
+    http::{StatusCode, Method, header::{
+        HeaderMap, HeaderName, HeaderValue, CONTENT_TYPE
     }}
 };
 use axum_server::tls_rustls::RustlsConfig;
@@ -133,11 +132,13 @@ async fn handler (
     OriginalUri(url): OriginalUri,
     Params(params): Params<HashMap<String, String>>,
     Query(vars): Query<Value>,
-    Extension(env): Extension<Environment>,
+    Extension(env): Extension<Environment<'static>>,
     Extension(config): Extension<Config>,
+    path: MatchedPath,
     headers: HeaderMap,
+    method: Method,
     body: String,
-) -> Result<String, Box<dyn Error>> {
+) -> Result<(StatusCode, HeaderMap, String), StatusCode> {
     let mut context = json!({}); 
     let x = context.as_object_mut().unwrap();
     x.insert(String::from("url"), json!(url.to_string()));
@@ -161,31 +162,86 @@ async fn handler (
     });
     x.insert(String::from("data"), json!({}));
 
-    /*struct Req {
-        name: String,
-        method: String,
-        headers: Option<HashMap<String, String>>,
-        url: String,
-        body: Option<String>
-    }*/
-    for route in config.routes.unwrap_or(Vec::new()) {
-        for req in route.requests.unwrap_or(Vec::new()) {
-            let r = RequestBuilder::from_parts(Client::new(), Request::new());
-            if req.headers.is_some() {
-                let headers = ok(req.headers)?;
-                for (key, value) in headers {
-                    r.header(key, value);
-                }
+    let mut response = (StatusCode::OK, HeaderMap::new(), String::new());
+
+    let mut route: Option<Route> = None;
+    for test in config.routes.unwrap_or(Vec::new()) {
+        if
+            route.is_none() &&
+            &test.method == method.as_str() &&
+            &test.path == path.as_str()
+        {
+            route = Some(test);
+        }
+    }
+    let route = match route {
+        Some(route) => route,
+        None => {
+            return Err(StatusCode::NOT_FOUND);
+        }
+    };
+    for req in route.requests.unwrap_or(Vec::new()) {
+        let ctx = context.clone();
+        let mut r = RequestBuilder::from_parts(Client::new(), Request::new(
+            env.render_str(&req.method, &ctx).unwrap().parse().unwrap(),
+            env.render_str(&req.url, &ctx).unwrap().parse().unwrap()
+        ));
+        if req.headers.is_some() {
+            let headers = req.headers.unwrap();
+            for (key, value) in headers {
+                r = r.header(
+                    env.render_str(&key, &ctx).unwrap(),
+                    env.render_str(&value, &ctx).unwrap()
+                );
             }
-            if req.body.is_some() {
-                let body = ok(req.body)?;
-                r.body(body);
+        }
+        if req.body.is_some() {
+            let body = req.body.unwrap().to_string();
+            r = r.body(env.render_str(&body, &ctx).unwrap());
+        }
+        let res = r.send().await.unwrap();
+        let status = res.status();
+        let headers = res.headers().clone();
+        let body = res.text().await.unwrap();
+        let d = context["data"].as_object_mut().unwrap();
+        d.insert(req.name.clone(), json!({
+            "status": status.as_u16(),
+            "body": body,
+            "headers": {}
+        }));
+
+        let h = d["headers"].as_object_mut().unwrap();
+        for (key, value) in &headers {
+            h.insert(key.to_string(), json!(value.to_str().unwrap()));
+        }
+        response = (status, headers, body)
+    }
+
+    if route.response.is_some() {
+        let res = route.response.unwrap();
+        let ctx = context.clone();
+        if res.status.is_some() {
+            let status = res.status.unwrap();
+            response.0 = env.render_str(&status, &ctx).unwrap().parse().unwrap();
+        }
+        if res.headers.is_some() {
+            let mut r = HeaderMap::new();
+            let headers = res.headers.unwrap();
+            for (key, value) in headers {
+                r.insert(
+                    HeaderName::from_bytes(env.render_str(&key, &ctx).unwrap().as_bytes()).unwrap(),
+                    env.render_str(&value, &ctx).unwrap().parse().unwrap()
+                );
             }
-            println!("{:#?}", req);
+            response.1 = r;
+        }
+        if res.body.is_some() {
+            let body = res.body.unwrap();
+            response.2 = env.render_str(&body, &ctx).unwrap().parse().unwrap();
         }
     }
 
-    Ok(String::new())
+    Ok(response)
 }
 
 async fn start_server (path: &PathBuf) -> Result<(), Box<dyn Error>> {

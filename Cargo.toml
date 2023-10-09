@@ -20,7 +20,7 @@ categories = ["hardware-support"]
 [dependencies]
 tokio = { version = "1", features = ["full"] }
 tower-http = { version = "0", features = ["cors"] }
-axum = "0"
+axum = { version = "0", features = ["matched-path", "original-uri", "query"] }
 axum-server = { version = "0", features = ["tls-rustls"] }
 clap = {version = "4", features = ["derive"]}
 toml = "0"
