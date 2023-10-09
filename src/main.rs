@@ -128,6 +128,14 @@ fn build_assets (
     Ok(app)
 }
 
+fn render (
+    env: &Environment,
+    name: &str,
+    context: &Value
+) -> Result<String, Box<dyn Error>> {
+    env.get_template(name)?.render(context)?
+}
+
 async fn handler (
     OriginalUri(url): OriginalUri,
     Params(params): Params<HashMap<String, String>>,
@@ -247,7 +255,7 @@ async fn handler (
 async fn start_server (path: &PathBuf) -> Result<(), Box<dyn Error>> {
     let p = path.as_path();
     let data = read_to_string(p)?;
-    let config: Config = toml::from_str(&data)?;
+    let mut config: Config = toml::from_str(&data)?;
     let dir = ok(p.parent())?;
     let mut env = Environment::new();
 
@@ -259,6 +267,72 @@ async fn start_server (path: &PathBuf) -> Result<(), Box<dyn Error>> {
         let templates = dir.join(ok(config.templates)?);
         env.set_loader(path_loader(templates));
     }
+
+    let mut i = 0;
+    for mut req in config.requests.unwrap_or(Vec::new()) {
+        let name = format!("__method_{}__", i);
+        env.add_template_owned(name.clone(), req.method.clone());
+        req.method = name;
+
+        let name = format!("__url_{}__", i);
+        env.add_template_owned(name.clone(), req.url.clone());
+        req.url = name;
+
+        if req.body.is_some() {
+            let body = req.body.unwrap_or(String::new());
+            let name = format!("__body_{}__", i);
+            req.body = Some(name.clone());
+            env.add_template_owned(name, body.clone());
+        }
+
+        let mut headers = HashMap::new();
+        let mut j = 0;
+        for (key, value) in req.headers.unwrap_or(HashMap::new()) {
+            let k = format!("__key_{}_{}__", i, j);
+            env.add_template_owned(k.clone(), key.clone());
+
+            let v = format!("__value_{}_{}__", i, j);
+            env.add_template_owned(v.clone(), value.clone());
+
+            headers.insert(k, v);
+            j = j+1;
+        }
+        req.headers = Some(headers);
+        i = i+1;
+    }
+
+    if config.res.is_some() {
+        let mut res = config.res.ok_or("unreachable")?;
+
+        if res.status.is_some() {
+            let status = res.status.ok_or("unreachable")?;
+            let name = String::from("__status__");
+            env.add_template_owned(name.clone(), res.status);
+            res.status = name;
+        }
+
+        if res.body.is_some() {
+            let body = res.body.ok_or("unreachable")?;
+            let name = String::from("__body__");
+            env.add_template_owned(name.clone(), res.body);
+            res.body = name;
+        }
+
+        let mut headers = HashMap::new();
+        let mut j = 0;
+        for (key, value) in res.headers.unwrap_or(HashMap::new()) {
+            let k = format!("__key_{}__", j);
+            env.add_template_owned(k.clone(), key.clone());
+
+            let v = format!("__value_{}__", j);
+            env.add_template_owned(v.clone(), value.clone());
+
+            headers.insert(k, v);
+            j = j+1;
+        }
+        res.headers = Some(headers);
+    }
+
     app = app.layer(Extension(env));
 
     if config.assets.is_some() {
