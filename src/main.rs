@@ -68,7 +68,7 @@ fn gen_config (path: &PathBuf) -> Result<(), Box<dyn Error>> {
     if ext != "toml" {
         return Err(e.into());
     }
-    write(p, include_str!("../tests/new.toml"))?;
+    write(p, include_str!("../tests/default.toml"))?;
     println!("New config file generated: `{}`", p.display());
     Ok(())
 }
@@ -128,8 +128,8 @@ async fn handler (
     OriginalUri(url): OriginalUri,
     Params(params): Params<HashMap<String, String>>,
     Query(vars): Query<Value>,
-    Extension(env): Extension<Environment<'static>>,
     Extension(config): Extension<Config>,
+    Extension(env): Extension<Environment<'static>>,
     path: MatchedPath,
     headers: HeaderMap,
     method: Method,
