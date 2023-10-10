@@ -1,3 +1,4 @@
+use std::sync::Arc;
 use std::error::Error;
 use std::fs::{write, read, read_to_string, read_dir};
 use std::path::{Path, PathBuf};
@@ -124,17 +125,25 @@ impl<E> From<E> for AppError where  E: Into<Box<dyn Error>> {
     }
 }
 
+type Env = Environment<'static>;
+#[derive(Clone)]
+struct AppState {
+    config: Config,
+    env: Env
+}
+
 async fn handler (
+    state: Extension<Arc<AppState>>,
     OriginalUri(url): OriginalUri,
     Params(params): Params<HashMap<String, String>>,
     Query(vars): Query<Value>,
-    Extension(config): Extension<Config>,
-    Extension(env): Extension<Environment<'static>>,
     path: MatchedPath,
     headers: HeaderMap,
     method: Method,
     body: String,
 ) -> Result<(StatusCode, HeaderMap, String), AppError> {
+    let config = &state.config;
+    let env = &state.env;
     let mut context = json!({}); 
     let x = context.as_object_mut().ok_or("unreachable")?;
     x.insert(String::from("url"), json!(url.to_string()));
@@ -162,7 +171,7 @@ async fn handler (
     let mut response = (StatusCode::OK, HeaderMap::new(), String::new());
 
     let mut route: Option<Route> = None;
-    for test in config.routes.unwrap_or(Vec::new()) {
+    for test in config.routes.clone().unwrap_or(Vec::new()) {
         if
             route.is_none() &&
             &test.method == method.as_str() &&
@@ -242,12 +251,11 @@ async fn start_server (path: &PathBuf) -> Result<(), Box<dyn Error>> {
     let p = path.as_path();
     let data = read_to_string(p)?;
     let config: Config = toml::from_str(&data)?;
+    let cnf = config.clone();
     let dir = p.parent().ok_or("unreachable")?;
     let mut env = Environment::new();
 
     let mut app = Router::new();
-
-    app = app.layer(Extension(config.clone()));
 
     if config.templates.is_some() {
         let templates = dir.join(config.templates.ok_or("unreachable")?);
@@ -334,7 +342,11 @@ async fn start_server (path: &PathBuf) -> Result<(), Box<dyn Error>> {
         r = r+1;
     }
 
-    app = app.layer(Extension(env));
+    let state = Arc::new(AppState {
+        config: cnf,
+        env: env,
+    });
+    app = app.layer(Extension(state));
 
     if config.assets.is_some() {
         let assets = dir.join(config.assets.ok_or("unreachable")?);
