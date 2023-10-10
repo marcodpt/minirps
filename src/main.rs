@@ -1,4 +1,3 @@
-use std::sync::Arc;
 use std::error::Error;
 use std::fs::{write, read, read_to_string, read_dir};
 use std::path::{Path, PathBuf};
@@ -12,7 +11,7 @@ use mime_guess;
 use tower_http::cors::{Any, CorsLayer};
 use axum::{
     response::{IntoResponse, Response},
-    extract::{OriginalUri, Path as Params, Query, Extension, MatchedPath},
+    extract::{OriginalUri, Path as Params, Query, State, MatchedPath},
     routing::{get, on},
     Router,
     Server,
@@ -75,8 +74,8 @@ fn gen_config (path: &PathBuf) -> Result<(), Box<dyn Error>> {
 }
 
 fn build_assets (
-    base: &Path, dir: &Path, mut app: Router
-) -> Result<Router, Box<dyn Error>> {
+    base: &Path, dir: &Path, mut app: Router<AppState>
+) -> Result<Router<AppState>, Box<dyn Error>> {
     for entry in read_dir(dir)? {
         let entry = entry?;
         let path = entry.path();
@@ -133,7 +132,7 @@ struct AppState {
 }
 
 async fn handler (
-    state: Extension<Arc<AppState>>,
+    state: State<AppState>,
     OriginalUri(url): OriginalUri,
     Params(params): Params<HashMap<String, String>>,
     Query(vars): Query<Value>,
@@ -341,12 +340,8 @@ async fn start_server (path: &PathBuf) -> Result<(), Box<dyn Error>> {
         });
         r = r+1;
     }
-
-    let state = Arc::new(AppState {
-        config: cnf,
-        env: env,
-    });
-    app = app.layer(Extension(state));
+    println!("{:#?}", cnf);
+    println!("{:#?}", routes);
 
     if config.assets.is_some() {
         let assets = dir.join(config.assets.ok_or("unreachable")?);
@@ -375,6 +370,12 @@ async fn start_server (path: &PathBuf) -> Result<(), Box<dyn Error>> {
 
         app = app.layer(layer);
     }
+
+    let state = AppState {
+        config: cnf,
+        env: env,
+    };
+    let app = app.with_state(state);
 
     let port = config.port.unwrap_or(3000);
     let addr = SocketAddr::from(([127, 0, 0, 1], port));
