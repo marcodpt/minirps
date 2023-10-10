@@ -8,9 +8,6 @@ Mini reverse proxy server written in rust
 ```
 
 ## TODO
- - compile all templates
- - never panics
-
  - add tests
  - check translations and write docs
  - publish first version

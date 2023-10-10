@@ -10,8 +10,9 @@ use toml;
 use mime_guess;
 use tower_http::cors::{Any, CorsLayer};
 use axum::{
+    response::{IntoResponse, Response},
     extract::{OriginalUri, Path as Params, Query, Extension, MatchedPath},
-    routing::{get, on, MethodFilter},
+    routing::{get, on},
     Router,
     Server,
     http::{StatusCode, Method, header::{
@@ -57,37 +58,16 @@ struct Config {
     routes: Option<Vec<Route>>
 }
 
-fn ok<T> (data: Option<T>) -> Result<T, Box<dyn Error>> {
-    data.ok_or("Unexpected option none".into())
-}
-
-fn assert (test: bool, msg: &str) -> Result<(), Box<dyn Error>> {
-    if test {Ok(())} else {Err(msg.into())}
-}
-
-fn resolve_method (method: &str) -> Result<MethodFilter, Box<dyn Error>> {
-    let res = match method.to_ascii_uppercase().as_str() {
-        "GET" => MethodFilter::GET,
-        "POST" => MethodFilter::POST,
-        "DELETE" => MethodFilter::DELETE,
-        "PUT" => MethodFilter::PUT,
-        "PATCH" => MethodFilter::PATCH,
-        "HEAD" => MethodFilter::HEAD,
-        "OPTIONS" => MethodFilter::OPTIONS,
-        "TRACE" => MethodFilter::TRACE,
-        _ => {
-            return Err(format!("Unknown method: {}", method).into());
-        }
-    };
-    Ok(res)
-}
-
 fn gen_config (path: &PathBuf) -> Result<(), Box<dyn Error>> {
     let p = path.as_path();
-    assert(!p.exists(), &format!("File already exists `{}`", p.display()))?;
+    if p.exists() {
+        return Err(format!("File already exists `{}`", p.display()).into());
+    }
     let e = format!("File must have .toml extension `{}`", p.display());
     let ext = p.extension().ok_or(e.clone())?;
-    assert(ext == "toml", &e)?;
+    if ext != "toml" {
+        return Err(e.into());
+    }
     write(p, include_str!("../tests/new.toml"))?;
     println!("New config file generated: `{}`", p.display());
     Ok(())
@@ -106,9 +86,11 @@ fn build_assets (
                 Ok(route) => Path::new("/").join(route),
                 Err(_) => path.clone()
             };
-            let name = ok(ok(route.file_name())?.to_str())?;
-            let root = ok(ok(route.parent())?.to_str())?;
-            let route = ok(route.to_str())?;
+            let name = route.file_name().ok_or("unreachable")?
+                .to_str().ok_or("unreachable")?;
+            let root = route.parent().ok_or("unreachable")?
+                .to_str().ok_or("unreachable")?;
+            let route = route.to_str().ok_or("unreachable")?;
             let mut headers = HeaderMap::new();
             match mime_guess::from_path(&path).first_raw() {
                 Some(value) => {
@@ -128,12 +110,18 @@ fn build_assets (
     Ok(app)
 }
 
-fn render (
-    env: &Environment,
-    name: &str,
-    context: &Value
-) -> Result<String, Box<dyn Error>> {
-    env.get_template(name)?.render(context)?
+struct AppError(Box<dyn Error>);
+
+impl IntoResponse for AppError {
+    fn into_response(self) -> Response {
+        (StatusCode::INTERNAL_SERVER_ERROR, self.0.to_string()).into_response()
+    }
+}
+
+impl<E> From<E> for AppError where  E: Into<Box<dyn Error>> {
+    fn from(err: E) -> Self {
+        Self(err.into())
+    }
 }
 
 async fn handler (
@@ -146,9 +134,9 @@ async fn handler (
     headers: HeaderMap,
     method: Method,
     body: String,
-) -> Result<(StatusCode, HeaderMap, String), StatusCode> {
+) -> Result<(StatusCode, HeaderMap, String), AppError> {
     let mut context = json!({}); 
-    let x = context.as_object_mut().unwrap();
+    let x = context.as_object_mut().ok_or("unreachable")?;
     x.insert(String::from("url"), json!(url.to_string()));
     x.insert(String::from("schema"), json!(url.scheme_str()));
     x.insert(String::from("host"), json!(url.host()));
@@ -156,9 +144,10 @@ async fn handler (
     x.insert(String::from("path"), json!(url.path()));
     x.insert(String::from("query"), json!(url.query()));
     x.insert(String::from("headers"), json!({}));
-    let h = x["headers"].as_object_mut().unwrap();
+    let h = x.get_mut("headers").ok_or("unreachable")?
+        .as_object_mut().ok_or("unreachable")?;
     for key in headers.keys() {
-        let v = headers.get(key).unwrap().to_str().unwrap();
+        let v = headers.get(key).ok_or("unreachable")?.to_str()?;
         h.insert(key.to_string(), json!(v));
     }
     x.insert(String::from("params"), json!(params));
@@ -182,70 +171,67 @@ async fn handler (
             route = Some(test);
         }
     }
-    let route = match route {
-        Some(route) => route,
-        None => {
-            return Err(StatusCode::NOT_FOUND);
-        }
-    };
+    let route = route.ok_or("no route matched!")?;
+
     for req in route.requests.unwrap_or(Vec::new()) {
         let ctx = context.clone();
         let mut r = RequestBuilder::from_parts(Client::new(), Request::new(
-            env.render_str(&req.method, &ctx).unwrap().parse().unwrap(),
-            env.render_str(&req.url, &ctx).unwrap().parse().unwrap()
+            env.get_template(&req.method)?.render(&ctx)?.parse()?,
+            env.get_template(&req.url)?.render(&ctx)?.parse()?
         ));
         if req.headers.is_some() {
-            let headers = req.headers.unwrap();
+            let headers = req.headers.ok_or("unreachable")?;
             for (key, value) in headers {
                 r = r.header(
-                    env.render_str(&key, &ctx).unwrap(),
-                    env.render_str(&value, &ctx).unwrap()
+                    env.get_template(&key)?.render(&ctx)?,
+                    env.get_template(&value)?.render(&ctx)?
                 );
             }
         }
         if req.body.is_some() {
-            let body = req.body.unwrap().to_string();
-            r = r.body(env.render_str(&body, &ctx).unwrap());
+            let body = req.body.ok_or("unreachable")?.to_string();
+            r = r.body(env.get_template(&body)?.render(&ctx)?);
         }
-        let res = r.send().await.unwrap();
+        let res = r.send().await?;
         let status = res.status();
         let headers = res.headers().clone();
-        let body = res.text().await.unwrap();
-        let d = context["data"].as_object_mut().unwrap();
+        let body = res.text().await?;
+        let d = context.get_mut("data").ok_or("unreachable")?
+            .as_object_mut().ok_or("unreachable")?;
         d.insert(req.name.clone(), json!({
             "status": status.as_u16(),
             "body": body,
             "headers": {}
         }));
 
-        let h = d["headers"].as_object_mut().unwrap();
+        let h = d.get_mut("headers").ok_or("unreachable")?
+            .as_object_mut().ok_or("unreachable")?;
         for (key, value) in &headers {
-            h.insert(key.to_string(), json!(value.to_str().unwrap()));
+            h.insert(key.to_string(), json!(value.to_str()?));
         }
         response = (status, headers, body)
     }
 
     if route.response.is_some() {
-        let res = route.response.unwrap();
+        let res = route.response.ok_or("unreachable")?;
         let ctx = context.clone();
         if res.status.is_some() {
-            let status = res.status.unwrap();
-            response.0 = env.render_str(&status, &ctx).unwrap().parse().unwrap();
+            let status = res.status.ok_or("unreachable")?;
+            response.0 = env.get_template(&status)?.render(&ctx)?.parse()?;
         }
         if res.headers.is_some() {
             let mut r = HeaderMap::new();
-            let headers = res.headers.unwrap();
+            let headers = res.headers.ok_or("unreachable")?;
             for (key, value) in headers {
-                r.insert(
-                    HeaderName::from_bytes(env.render_str(&key, &ctx).unwrap().as_bytes()).unwrap(),
-                    env.render_str(&value, &ctx).unwrap().parse().unwrap()
-                );
+                r.insert(HeaderName::from_bytes(
+                    env.get_template(&key)?.render(&ctx)?.as_bytes()
+                )?, env.get_template(&value)?.render(&ctx)?.parse()?);
             }
             response.1 = r;
         }
         if res.body.is_some() {
-            let body = res.body.unwrap();
-            response.2 = env.render_str(&body, &ctx).unwrap().parse().unwrap();
+            let body = res.body.ok_or("unreachable")?;
+            response.2 = env.get_template(&body)?.render(&ctx)?.parse()?;
         }
     }
 
@@ -255,8 +241,8 @@ async fn handler (
 async fn start_server (path: &PathBuf) -> Result<(), Box<dyn Error>> {
     let p = path.as_path();
     let data = read_to_string(p)?;
-    let mut config: Config = toml::from_str(&data)?;
-    let dir = ok(p.parent())?;
+    let config: Config = toml::from_str(&data)?;
+    let dir = p.parent().ok_or("unreachable")?;
     let mut env = Environment::new();
 
     let mut app = Router::new();
@@ -264,94 +250,106 @@ async fn start_server (path: &PathBuf) -> Result<(), Box<dyn Error>> {
     app = app.layer(Extension(config.clone()));
 
     if config.templates.is_some() {
-        let templates = dir.join(ok(config.templates)?);
+        let templates = dir.join(config.templates.ok_or("unreachable")?);
         env.set_loader(path_loader(templates));
     }
 
-    let mut i = 0;
-    for mut req in config.requests.unwrap_or(Vec::new()) {
-        let name = format!("__method_{}__", i);
-        env.add_template_owned(name.clone(), req.method.clone());
-        req.method = name;
+    let mut r = 0;
+    let mut routes: Vec<Route> = Vec::new();
+    for route in config.routes.unwrap_or(Vec::new()) {
+        let mut i = 0;
+        let mut requests: Vec<Req> = Vec::new();
+        for mut req in route.requests.unwrap_or(Vec::new()) {
+            let name = format!("__r{}_method_{}__", r, i);
+            env.add_template_owned(name.clone(), req.method.clone())?;
+            req.method = name;
 
-        let name = format!("__url_{}__", i);
-        env.add_template_owned(name.clone(), req.url.clone());
-        req.url = name;
+            let name = format!("__r{}_url_{}__", r, i);
+            env.add_template_owned(name.clone(), req.url.clone())?;
+            req.url = name;
 
-        if req.body.is_some() {
-            let body = req.body.unwrap_or(String::new());
-            let name = format!("__body_{}__", i);
-            req.body = Some(name.clone());
-            env.add_template_owned(name, body.clone());
+            if req.body.is_some() {
+                let body = req.body.unwrap_or(String::new());
+                let name = format!("__r{}_body_{}__", r, i);
+                req.body = Some(name.clone());
+                env.add_template_owned(name, body.clone())?;
+            }
+
+            let mut headers = HashMap::new();
+            let mut j = 0;
+            for (key, value) in req.headers.unwrap_or(HashMap::new()) {
+                let k = format!("__r{}_key_{}_{}__", r, i, j);
+                env.add_template_owned(k.clone(), key.clone())?;
+
+                let v = format!("__r{}_value_{}_{}__", r, i, j);
+                env.add_template_owned(v.clone(), value.clone())?;
+
+                headers.insert(k, v);
+                j = j+1;
+            }
+            req.headers = Some(headers);
+            requests.push(req);
+            i = i+1;
         }
 
-        let mut headers = HashMap::new();
-        let mut j = 0;
-        for (key, value) in req.headers.unwrap_or(HashMap::new()) {
-            let k = format!("__key_{}_{}__", i, j);
-            env.add_template_owned(k.clone(), key.clone());
+        let mut response: Option<Res> = None;
+        if route.response.is_some() {
+            let mut res = route.response.ok_or("unreachable")?;
 
-            let v = format!("__value_{}_{}__", i, j);
-            env.add_template_owned(v.clone(), value.clone());
+            if res.status.is_some() {
+                let status = res.status.ok_or("unreachable")?;
+                let name = format!("__r{}_status__", r);
+                env.add_template_owned(name.clone(), status)?;
+                res.status = Some(name);
+            }
 
-            headers.insert(k, v);
-            j = j+1;
+            if res.body.is_some() {
+                let body = res.body.ok_or("unreachable")?;
+                let name = format!("__r{}_body__", r);
+                env.add_template_owned(name.clone(), body)?;
+                res.body = Some(name);
+            }
+
+            let mut headers = HashMap::new();
+            let mut j = 0;
+            for (key, value) in res.headers.unwrap_or(HashMap::new()) {
+                let k = format!("__r{}_key_{}__", r, j);
+                env.add_template_owned(k.clone(), key.clone())?;
+
+                let v = format!("__r{}_value_{}__", r, j);
+                env.add_template_owned(v.clone(), value.clone())?;
+
+                headers.insert(k, v);
+                j = j+1;
+            }
+            res.headers = Some(headers);
+            response = Some(res);
         }
-        req.headers = Some(headers);
-        i = i+1;
-    }
-
-    if config.res.is_some() {
-        let mut res = config.res.ok_or("unreachable")?;
-
-        if res.status.is_some() {
-            let status = res.status.ok_or("unreachable")?;
-            let name = String::from("__status__");
-            env.add_template_owned(name.clone(), res.status);
-            res.status = name;
-        }
-
-        if res.body.is_some() {
-            let body = res.body.ok_or("unreachable")?;
-            let name = String::from("__body__");
-            env.add_template_owned(name.clone(), res.body);
-            res.body = name;
-        }
-
-        let mut headers = HashMap::new();
-        let mut j = 0;
-        for (key, value) in res.headers.unwrap_or(HashMap::new()) {
-            let k = format!("__key_{}__", j);
-            env.add_template_owned(k.clone(), key.clone());
-
-            let v = format!("__value_{}__", j);
-            env.add_template_owned(v.clone(), value.clone());
-
-            headers.insert(k, v);
-            j = j+1;
-        }
-        res.headers = Some(headers);
+        routes.push(Route {
+            method: route.method.clone(),
+            path: route.path.clone(),
+            requests: Some(requests),
+            response: response
+        });
+        r = r+1;
     }
 
     app = app.layer(Extension(env));
 
     if config.assets.is_some() {
-        let assets = dir.join(ok(config.assets)?);
+        let assets = dir.join(config.assets.ok_or("unreachable")?);
         app = build_assets(&assets, &assets, app)?;
     }
 
-    if config.routes.is_some() {
-        let routes = ok(config.routes)?;
-
-        for route in routes {
-            app = app.route(&route.path,
-                on(resolve_method(&route.method)?, handler)
-            );
-        }
+    for route in routes {
+        app = app.route(&route.path, on(
+            Method::from_bytes(route.method.as_bytes())?.try_into()?,
+            handler
+        ));
     }
 
     if config.cors.is_some() {
-        let origins = ok(config.cors)?;
+        let origins = config.cors.ok_or("unreachable")?;
 
         let mut layer = CorsLayer::new()
             .allow_methods(Any);
@@ -370,8 +368,8 @@ async fn start_server (path: &PathBuf) -> Result<(), Box<dyn Error>> {
     let addr = SocketAddr::from(([127, 0, 0, 1], port));
 
     if config.cert.is_some() && config.key.is_some() {
-        let cert = dir.join(ok(config.cert)?);
-        let key = dir.join(ok(config.key)?);
+        let cert = dir.join(config.cert.ok_or("unreachable")?);
+        let key = dir.join(config.key.ok_or("unreachable")?);
         let tls = RustlsConfig::from_pem(read(cert)?, read(key)?).await?;
 
         println!("Server started at https://localhost:{}", port);
