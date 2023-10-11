@@ -127,7 +127,7 @@ impl<E> From<E> for AppError where  E: Into<Box<dyn Error>> {
 type Env = Environment<'static>;
 #[derive(Clone)]
 struct AppState {
-    config: Config,
+    routes: Vec<Route>,
     env: Env
 }
 
@@ -141,7 +141,7 @@ async fn handler (
     method: Method,
     body: String,
 ) -> Result<(StatusCode, HeaderMap, String), AppError> {
-    let config = &state.config;
+    let routes = &state.routes;
     let env = &state.env;
     let mut context = json!({}); 
     let x = context.as_object_mut().ok_or("unreachable")?;
@@ -170,18 +170,18 @@ async fn handler (
     let mut response = (StatusCode::OK, HeaderMap::new(), String::new());
 
     let mut route: Option<Route> = None;
-    for test in config.routes.clone().unwrap_or(Vec::new()) {
+    for test in routes {
         if
             route.is_none() &&
             &test.method == method.as_str() &&
             &test.path == path.as_str()
         {
-            route = Some(test);
+            route = Some(test.clone());
         }
     }
     let route = route.ok_or("no route matched!")?;
 
-    for req in route.requests.unwrap_or(Vec::new()) {
+    for req in route.requests.ok_or("unreachable")? {
         let ctx = context.clone();
         let mut r = RequestBuilder::from_parts(Client::new(), Request::new(
             env.get_template(&req.method)?.render(&ctx)?.parse()?,
@@ -190,8 +190,7 @@ async fn handler (
         if req.headers.is_some() {
             let headers = req.headers.ok_or("unreachable")?;
             for (key, value) in headers {
-                r = r.header(
-                    env.get_template(&key)?.render(&ctx)?,
+                r = r.header(key.clone(),
                     env.get_template(&value)?.render(&ctx)?
                 );
             }
@@ -206,13 +205,19 @@ async fn handler (
         let body = res.text().await?;
         let d = context.get_mut("data").ok_or("unreachable")?
             .as_object_mut().ok_or("unreachable")?;
+        let json = match serde_json::from_str(&body) {
+            Ok(data) => data,
+            Err(_) => json!(body)
+        };
         d.insert(req.name.clone(), json!({
             "status": status.as_u16(),
+            "headers": {},
             "body": body,
-            "headers": {}
+            "json": json
         }));
 
-        let h = d.get_mut("headers").ok_or("unreachable")?
+        let h = d.get_mut(&req.name).ok_or("unreachable")?
+            .get_mut("headers").ok_or("unreachable")?
             .as_object_mut().ok_or("unreachable")?;
         for (key, value) in &headers {
             h.insert(key.to_string(), json!(value.to_str()?));
@@ -231,9 +236,10 @@ async fn handler (
             let mut r = HeaderMap::new();
             let headers = res.headers.ok_or("unreachable")?;
             for (key, value) in headers {
-                r.insert(HeaderName::from_bytes(
-                    env.get_template(&key)?.render(&ctx)?.as_bytes()
-                )?, env.get_template(&value)?.render(&ctx)?.parse()?);
+                r.insert(
+                    HeaderName::from_bytes(key.as_bytes())?,
+                    env.get_template(&value)?.render(&ctx)?.parse()?
+                );
             }
             response.1 = r;
         }
@@ -250,9 +256,9 @@ async fn start_server (path: &PathBuf) -> Result<(), Box<dyn Error>> {
     let p = path.as_path();
     let data = read_to_string(p)?;
     let config: Config = toml::from_str(&data)?;
-    let cnf = config.clone();
     let dir = p.parent().ok_or("unreachable")?;
     let mut env = Environment::new();
+    //println!("{:#?}", config);
 
     let mut app = Router::new();
 
@@ -267,32 +273,27 @@ async fn start_server (path: &PathBuf) -> Result<(), Box<dyn Error>> {
         let mut i = 0;
         let mut requests: Vec<Req> = Vec::new();
         for mut req in route.requests.unwrap_or(Vec::new()) {
-            let name = format!("__r{}_method_{}__", r, i);
+            let name = format!("__r{}_{}_method__", r, i);
             env.add_template_owned(name.clone(), req.method.clone())?;
             req.method = name;
 
-            let name = format!("__r{}_url_{}__", r, i);
+            let name = format!("__r{}_{}_url__", r, i);
             env.add_template_owned(name.clone(), req.url.clone())?;
             req.url = name;
 
             if req.body.is_some() {
                 let body = req.body.unwrap_or(String::new());
-                let name = format!("__r{}_body_{}__", r, i);
+                let name = format!("__r{}_{}_body__", r, i);
                 req.body = Some(name.clone());
                 env.add_template_owned(name, body.clone())?;
             }
 
             let mut headers = HashMap::new();
-            let mut j = 0;
             for (key, value) in req.headers.unwrap_or(HashMap::new()) {
-                let k = format!("__r{}_key_{}_{}__", r, i, j);
-                env.add_template_owned(k.clone(), key.clone())?;
-
-                let v = format!("__r{}_value_{}_{}__", r, i, j);
+                let v = format!("__r{}_{}_header_{}__", r, i, key);
                 env.add_template_owned(v.clone(), value.clone())?;
 
-                headers.insert(k, v);
-                j = j+1;
+                headers.insert(key, v);
             }
             req.headers = Some(headers);
             requests.push(req);
@@ -318,16 +319,11 @@ async fn start_server (path: &PathBuf) -> Result<(), Box<dyn Error>> {
             }
 
             let mut headers = HashMap::new();
-            let mut j = 0;
             for (key, value) in res.headers.unwrap_or(HashMap::new()) {
-                let k = format!("__r{}_key_{}__", r, j);
-                env.add_template_owned(k.clone(), key.clone())?;
-
-                let v = format!("__r{}_value_{}__", r, j);
+                let v = format!("__r{}_header_{}__", r, key);
                 env.add_template_owned(v.clone(), value.clone())?;
 
-                headers.insert(k, v);
-                j = j+1;
+                headers.insert(key, v);
             }
             res.headers = Some(headers);
             response = Some(res);
@@ -340,15 +336,14 @@ async fn start_server (path: &PathBuf) -> Result<(), Box<dyn Error>> {
         });
         r = r+1;
     }
-    println!("{:#?}", cnf);
-    println!("{:#?}", routes);
+    //println!("{:#?}", routes);
 
     if config.assets.is_some() {
         let assets = dir.join(config.assets.ok_or("unreachable")?);
         app = build_assets(&assets, &assets, app)?;
     }
 
-    for route in routes {
+    for route in &routes {
         app = app.route(&route.path, on(
             Method::from_bytes(route.method.as_bytes())?.try_into()?,
             handler
@@ -372,7 +367,7 @@ async fn start_server (path: &PathBuf) -> Result<(), Box<dyn Error>> {
     }
 
     let state = AppState {
-        config: cnf,
+        routes: routes,
         env: env,
     };
     let app = app.with_state(state);

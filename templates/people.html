@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}People{% endblock title %}
+{% block main %}
+  <h1>Star Wars People</h1>
+  {% set rows = data.people.json.results %}
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Birth (Y)</th>
+        <th>Gender</th>
+        <th>Height</th>
+        <th>Mass</th>
+        <th>Eye Color</th>
+        <th>Hair Color</th>
+        <th>Skin Color</th>
+        <th>Home world</th>
+        <th>Films</th>
+        <th>Species</th>
+        <th>Starships</th>
+        <th>Vehicles</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in rows %}
+        <tr>
+          <td>{{row.name}}</td>
+          <td>{{row.birth_year}}</td>
+          <td>{{row.gender}}</td>
+          <td>{{row.height}}</td>
+          <td>{{row.mass}}</td>
+          <td>{{row.eye_color}}</td>
+          <td>{{row.hair_color}}</td>
+          <td>{{row.skin_color}}</td>
+          <td>homeworld</td>
+          <td>{{row.films | length}}</td>
+          <td>{{row.species | length}}</td>
+          <td>{{row.starships | length}}</td>
+          <td>{{row.vehicles | length}}</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+{% endblock main %}

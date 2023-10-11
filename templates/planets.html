@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}Planets{% endblock title %}
+{% block main %}
+  <h1>Star Wars Planets</h1>
+  {% set rows = data.planets.json.results %}
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Climate</th>
+        <th>Terrain</th>
+        <th>Population</th>
+        <th>Diameter</th>
+        <th>Gravity</th>
+        <th>Orbital Period</th>
+        <th>Rotation Period</th>
+        <th>Surface Water</th>
+        <th>Films</th>
+        <th>Residents</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in rows %}
+        <tr>
+          <td>{{row.name}}</td>
+          <td>{{row.climate}}</td>
+          <td>{{row.terrain}}</td>
+          <td>{{row.population}}</td>
+          <td>{{row.diameter}}</td>
+          <td>{{row.gravity}}</td>
+          <td>{{row.orbital_period}}</td>
+          <td>{{row.rotation_period}}</td>
+          <td>{{row.surface_water}}</td>
+          <td>{{row.films | length}}</td>
+          <td>{{row.residents | length}}</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+{% endblock main %}

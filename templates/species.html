@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}Species{% endblock title %}
+{% block main %}
+  <h1>Star Wars Species</h1>
+  {% set rows = data.species.json.results %}
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Classification</th>
+        <th>Designation</th>
+        <th>Height (AVG)</th>
+        <th>Lifespan (AVG)</th>
+        <th>Language</th>
+        <th>Eye Colors</th>
+        <th>Hair Colors</th>
+        <th>Skin Colors</th>
+        <th>Home World</th>
+        <th>Films</th>
+        <th>People</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in rows %}
+        <tr>
+          <td>{{row.name}}</td>
+          <td>{{row.classification}}</td>
+          <td>{{row.designation}}</td>
+          <td>{{row.average_height}}</td>
+          <td>{{row.average_lifespan}}</td>
+          <td>{{row.language}}</td>
+          <td>{{row.eye_colors}}</td>
+          <td>{{row.hair_colors}}</td>
+          <td>{{row.skin_colors}}</td>
+          <td>homeworld</td>
+          <td>{{row.films | length}}</td>
+          <td>{{row.people | length}}</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+{% endblock main %}

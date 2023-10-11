@@ -32,3 +32,99 @@ body = "{% include 'demo.html' %}"
 
 [routes.response.headers]
 Content-Type = "text/html"
+
+
+[[routes]]
+method = "GET"
+path = "/films"
+
+[[routes.requests]]
+name = "films"
+method = "GET"
+url = "https://swapi.dev/api/films/"
+
+[routes.response]
+body = "{% include 'films.html' %}"
+
+[routes.response.headers]
+Content-Type = "text/html"
+
+
+[[routes]]
+method = "GET"
+path = "/people"
+
+[[routes.requests]]
+name = "people"
+method = "GET"
+url = "https://swapi.dev/api/people/"
+
+[routes.response]
+body = "{% include 'people.html' %}"
+
+[routes.response.headers]
+Content-Type = "text/html"
+
+
+[[routes]]
+method = "GET"
+path = "/planets"
+
+[[routes.requests]]
+name = "planets"
+method = "GET"
+url = "https://swapi.dev/api/planets/"
+
+[routes.response]
+body = "{% include 'planets.html' %}"
+
+[routes.response.headers]
+Content-Type = "text/html"
+
+
+[[routes]]
+method = "GET"
+path = "/species"
+
+[[routes.requests]]
+name = "species"
+method = "GET"
+url = "https://swapi.dev/api/species/"
+
+[routes.response]
+body = "{% include 'species.html' %}"
+
+[routes.response.headers]
+Content-Type = "text/html"
+
+
+[[routes]]
+method = "GET"
+path = "/starships"
+
+[[routes.requests]]
+name = "starships"
+method = "GET"
+url = "https://swapi.dev/api/starships/"
+
+[routes.response]
+body = "{% include 'starships.html' %}"
+
+[routes.response.headers]
+Content-Type = "text/html"
+
+
+[[routes]]
+method = "GET"
+path = "/vehicles"
+
+[[routes.requests]]
+name = "vehicles"
+method = "GET"
+url = "https://swapi.dev/api/vehicles/"
+
+[routes.response]
+body = "{% include 'vehicles.html' %}"
+
+[routes.response.headers]
+Content-Type = "text/html"

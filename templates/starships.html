@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block title %}Starships{% endblock title %}
+{% block main %}
+  <h1>Star Wars Starships</h1>
+  {% set rows = data.starships.json.results %}
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Model</th>
+        <th>Manufacturer</th>
+        <th>Class</th>
+        <th>MGLT</th>
+        <th>Passengers</th>
+        <th>Crew</th>
+        <th>Length</th>
+        <th>Cost (credits)</th>
+        <th>Capacity</th>
+        <th>Consumables</th>
+        <th>HyperDrive Rating</th>
+        <th>Max ATM speed</th>
+        <th>Films</th>
+        <th>Pilots</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in rows %}
+        <tr>
+          <td>{{row.name}}</td>
+          <td>{{row.model}}</td>
+          <td>{{row.manufacturer}}</td>
+          <td>{{row.starship_class}}</td>
+          <td>{{row.MGLT}}</td>
+          <td>{{row.passengers}}</td>
+          <td>{{row.crew}}</td>
+          <td>{{row.length}}</td>
+          <td>{{row.cost_in_credits}}</td>
+          <td>{{row.cargo_capacity}}</td>
+          <td>{{row.consumables}}</td>
+          <td>{{row.hyperdrive_rating}}</td>
+          <td>{{row.max_atmosphering_speed}}</td>
+          <td>{{row.films | length}}</td>
+          <td>{{row.pilots | length}}</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+{% endblock main %}
