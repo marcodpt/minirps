@@ -8,10 +8,9 @@ Mini reverse proxy server written in rust
 ```
 
 ## TODO
+ - add cache rules
+ - add loop requests
+ - hot reload server in case of file changes
  - add tests
  - check translations and write docs
  - publish first version
-
-## NEXT
- - add cache rules
- - hot reload server in case of file changes
