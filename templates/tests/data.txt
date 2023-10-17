@@ -1,0 +1,12 @@
+path: {{path}}
+query: {{query}}
+headers['content-type']: {{headers['content-type']}}
+params.id: {{params.id}}
+vars.x: {{vars.x}}
+body: {{body}}
+json: {{json}}
+
+status: {{data.crazy.status}}
+crazy['content-type']: {{data.crazy.headers['content-type']}}
+json.id: {{data.crazy.json.id}}
+crazy: {{data.crazy.body}}

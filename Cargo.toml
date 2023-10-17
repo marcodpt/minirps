@@ -15,7 +15,7 @@ keywords = [
   "axum",
   "minijinja"
 ]
-categories = ["hardware-support"]
+categories = ["web-programming::http-server"]
 
 [dependencies]
 tokio = { version = "1", features = ["full"] }

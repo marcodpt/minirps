@@ -25,7 +25,7 @@ use reqwest::{Request, RequestBuilder, Client};
 
 #[derive(Deserialize, Clone, Debug)]
 struct Req {
-    name: String,
+    name: Option<String>,
     method: String,
     headers: Option<HashMap<String, String>>,
     url: String,
@@ -145,10 +145,6 @@ async fn handler (
     let env = &state.env;
     let mut context = json!({}); 
     let x = context.as_object_mut().ok_or("unreachable")?;
-    x.insert(String::from("url"), json!(url.to_string()));
-    x.insert(String::from("schema"), json!(url.scheme_str()));
-    x.insert(String::from("host"), json!(url.host()));
-    x.insert(String::from("port"), json!(url.port_u16()));
     x.insert(String::from("path"), json!(url.path()));
     x.insert(String::from("query"), json!(url.query()));
     x.insert(String::from("headers"), json!({}));
@@ -187,16 +183,14 @@ async fn handler (
             env.get_template(&req.method)?.render(&ctx)?.parse()?,
             env.get_template(&req.url)?.render(&ctx)?.parse()?
         ));
-        if req.headers.is_some() {
-            let headers = req.headers.ok_or("unreachable")?;
+        if let Some(headers) = req.headers {
             for (key, value) in headers {
                 r = r.header(key.clone(),
                     env.get_template(&value)?.render(&ctx)?
                 );
             }
         }
-        if req.body.is_some() {
-            let body = req.body.ok_or("unreachable")?.to_string();
+        if let Some(body) = req.body {
             r = r.body(env.get_template(&body)?.render(&ctx)?);
         }
         let res = r.send().await?;
@@ -209,32 +203,32 @@ async fn handler (
             Ok(data) => data,
             Err(_) => json!(body)
         };
-        d.insert(req.name.clone(), json!({
-            "status": status.as_u16(),
-            "headers": {},
-            "body": body,
-            "json": json
-        }));
 
-        let h = d.get_mut(&req.name).ok_or("unreachable")?
-            .get_mut("headers").ok_or("unreachable")?
-            .as_object_mut().ok_or("unreachable")?;
-        for (key, value) in &headers {
-            h.insert(key.to_string(), json!(value.to_str()?));
+        if let Some(name) = req.name {
+            d.insert(name.clone(), json!({
+                "status": status.as_u16(),
+                "headers": {},
+                "body": body,
+                "json": json
+            }));
+
+            let h = d.get_mut(&name).ok_or("unreachable")?
+                .get_mut("headers").ok_or("unreachable")?
+                .as_object_mut().ok_or("unreachable")?;
+            for (key, value) in &headers {
+                h.insert(key.to_string(), json!(value.to_str()?));
+            }
         }
         response = (status, headers, body)
     }
 
-    if route.response.is_some() {
-        let res = route.response.ok_or("unreachable")?;
+    if let Some(res) = route.response {
         let ctx = context.clone();
-        if res.status.is_some() {
-            let status = res.status.ok_or("unreachable")?;
+        if let Some(status) = res.status {
             response.0 = env.get_template(&status)?.render(&ctx)?.parse()?;
         }
-        if res.headers.is_some() {
+        if let Some(headers) = res.headers {
             let mut r = HeaderMap::new();
-            let headers = res.headers.ok_or("unreachable")?;
             for (key, value) in headers {
                 r.insert(
                     HeaderName::from_bytes(key.as_bytes())?,
@@ -243,8 +237,7 @@ async fn handler (
             }
             response.1 = r;
         }
-        if res.body.is_some() {
-            let body = res.body.ok_or("unreachable")?;
+        if let Some(body) = res.body {
             response.2 = env.get_template(&body)?.render(&ctx)?.parse()?;
         }
     }
@@ -262,8 +255,8 @@ async fn start_server (path: &PathBuf) -> Result<(), Box<dyn Error>> {
 
     let mut app = Router::new();
 
-    if config.templates.is_some() {
-        let templates = dir.join(config.templates.ok_or("unreachable")?);
+    if let Some(templates) = config.templates {
+        let templates = dir.join(templates);
         env.set_loader(path_loader(templates));
     }
 
@@ -281,8 +274,7 @@ async fn start_server (path: &PathBuf) -> Result<(), Box<dyn Error>> {
             env.add_template_owned(name.clone(), req.url.clone())?;
             req.url = name;
 
-            if req.body.is_some() {
-                let body = req.body.unwrap_or(String::new());
+            if let Some(body) = req.body {
                 let name = format!("__r{}_{}_body__", r, i);
                 req.body = Some(name.clone());
                 env.add_template_owned(name, body.clone())?;
@@ -301,18 +293,14 @@ async fn start_server (path: &PathBuf) -> Result<(), Box<dyn Error>> {
         }
 
         let mut response: Option<Res> = None;
-        if route.response.is_some() {
-            let mut res = route.response.ok_or("unreachable")?;
-
-            if res.status.is_some() {
-                let status = res.status.ok_or("unreachable")?;
+        if let Some(mut res) = route.response {
+            if let Some(status) = res.status {
                 let name = format!("__r{}_status__", r);
                 env.add_template_owned(name.clone(), status)?;
                 res.status = Some(name);
             }
 
-            if res.body.is_some() {
-                let body = res.body.ok_or("unreachable")?;
+            if let Some(body) = res.body {
                 let name = format!("__r{}_body__", r);
                 env.add_template_owned(name.clone(), body)?;
                 res.body = Some(name);
@@ -338,8 +326,8 @@ async fn start_server (path: &PathBuf) -> Result<(), Box<dyn Error>> {
     }
     //println!("{:#?}", routes);
 
-    if config.assets.is_some() {
-        let assets = dir.join(config.assets.ok_or("unreachable")?);
+    if let Some(assets) = config.assets {
+        let assets = dir.join(assets);
         app = build_assets(&assets, &assets, app)?;
     }
 
@@ -350,9 +338,7 @@ async fn start_server (path: &PathBuf) -> Result<(), Box<dyn Error>> {
         ));
     }
 
-    if config.cors.is_some() {
-        let origins = config.cors.ok_or("unreachable")?;
-
+    if let Some(origins) = config.cors {
         let mut layer = CorsLayer::new()
             .allow_methods(Any);
 
