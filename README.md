@@ -8,9 +8,9 @@ Mini reverse proxy server written in rust
  - [X] CORS
  - [X] consume any API data and create customized responses with minijinja templates
  - [X] extensively tested with hurl
- - [] cache rules
- - [] hot reload server in case of file changes
- - [] define once an array of requests based on a variable
+ - [ ] cache rules
+ - [ ] hot reload server in case of file changes
+ - [ ] define once an array of requests based on a variable
 
 ## Usage
 ```
