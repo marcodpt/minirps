@@ -2,6 +2,7 @@
 Mini reverse proxy server written in rust
 
 ## Features
+ - [X] very fast single binary with no dependencies
  - [X] static files server
  - [X] reverse proxy router
  - [X] https
@@ -19,20 +20,20 @@ Mini reverse proxy server written in rust
 
 ### Simple static file server
 Config.toml
-```
+```toml
 assets = "path/to/static/folder"
 ```
 
 ### Running on port 4000 instead of 3000
 Config.toml
-```
+```toml
 assets = "path/to/static/folder"
 port = 4000
 ```
 
 ### Use https instead of http
 Config.toml
-```
+```toml
 assets = "path/to/static/folder"
 port = 4000
 cert = "path/to/cert.pem"
@@ -41,7 +42,7 @@ key = "path/to/key.pem"
 
 ### Allow cors from my site
 Config.toml
-```
+```toml
 assets = "path/to/static/folder"
 port = 4000
 cert = "path/to/cert.pem"
@@ -53,7 +54,7 @@ cors = [
 
 ### Allow cors from my sites in many scenarios
 Config.toml
-```
+```toml
 assets = "path/to/static/folder"
 port = 4000
 cert = "path/to/cert.pem"
@@ -68,7 +69,7 @@ cors = [
 
 ### Allow cors from all origins
 Config.toml
-```
+```toml
 assets = "path/to/static/folder"
 port = 4000
 cert = "path/to/cert.pem"
@@ -78,7 +79,7 @@ cors = []
 
 ### Add a reverse proxy to a API server running at http://localhost:8000 
 Config.toml
-```
+```toml
 assets = "path/to/static/folder"
 port = 4000
 cert = "path/to/cert.pem"
@@ -107,7 +108,7 @@ body = "{{body}}"
 
 ### Send text message response instead of API response
 Config.toml
-```
+```toml
 assets = "path/to/static/folder"
 port = 4000
 cert = "path/to/cert.pem"
@@ -149,7 +150,7 @@ headers = { Content-Type = "text/plain" }
 
 ### Send great HTML template response instead of API response
 Config.toml
-```
+```toml
 templates = "path/to/my/great/minijinja/templates/folder"
 assets = "path/to/static/folder"
 port = 4000
