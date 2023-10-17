@@ -195,6 +195,38 @@ headers = { Content-Type = "text/html" }
 ```
 
 ## Docs
+### config.toml
+Currently any changes in `config.toml` you must reload the server to apply.
+
+#### port: integer?
+Optional port integer to run the server, default: 3000
+
+#### cors: array of strings?
+Optional array of allowed origins for CORS requests.
+An empty array allow all origins.
+If this variable is not setted CORS is disabled.
+
+#### cert: string?
+Optional string with the path of the public key file to https server.
+Only if `cert` and `key` is available the server will run in https.
+
+#### key: string?
+Optional string with the path of the private key file to https server.
+Only if `cert` and `key` is available the server will run in https.
+
+#### assets: string?
+Optional string with the path for the static site folder.
+Currently any file added you must reload the server to apply.
+The data inside the file is dynamically readed so files editions is already
+covered.
+
+#### templates: string?
+Optional string with the path for your minijinja templates folder.
+This folder is dinamically readed so you can edit files without problems.
+But the templates inside `config.toml` are readed only on startup, and in case
+of changes you must restart the server.
+
+### Available template variables
 
 ## Tests
 
