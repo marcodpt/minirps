@@ -14,34 +14,37 @@ Mini [reverse proxy](https://en.wikipedia.org/wiki/Reverse_proxy) server written
  - [ ] define once an array of requests based on a variable
 
 ## Usage
-```
-./target/release/minirps start config.toml
-```
 
 ### Simple static file server
-Config.toml
-```toml
-assets = "path/to/static/folder"
+```
+minirps path/to/static/folder
 ```
 
 ### Running on port 4000 instead of 3000
-Config.toml
-```toml
-assets = "path/to/static/folder"
-port = 4000
+```
+minirps -p 4000 path/to/static/folder
 ```
 
 ### Using https instead of http
-Config.toml
-```toml
-assets = "path/to/static/folder"
-port = 4000
-cert = "path/to/cert.pem"
-key = "path/to/key.pem"
+```
+minirps -p 4000 path/to/static/folder -c path/to/cert.pem -k path/to/key.pem
+```
+
+### Allow [CORS](https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS) from all origins
+```
+minirps -a -p 4000 path/to/static/folder -c path/to/cert.pem -k path/to/key.pem
+```
+
+### Start the server with a config.toml file
+Here the limit of possible configurations passed by command line has been reached.
+
+To create more complex and interesting examples we need a config.toml file
+```
+minirps -f path/to/config.toml
 ```
 
 ### Allow [CORS](https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS) for my website
-Config.toml
+config.toml
 ```toml
 assets = "path/to/static/folder"
 port = 4000
@@ -53,7 +56,7 @@ cors = [
 ```
 
 ### Allow [CORS](https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS) from my websites of varying origins 
-Config.toml
+config.toml
 ```toml
 assets = "path/to/static/folder"
 port = 4000
@@ -68,7 +71,7 @@ cors = [
 ```
 
 ### Allow [CORS](https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS) from all origins
-Config.toml
+config.toml
 ```toml
 assets = "path/to/static/folder"
 port = 4000
@@ -78,7 +81,7 @@ cors = []
 ```
 
 ### Add a [reverse proxy](https://en.wikipedia.org/wiki/Reverse_proxy) to an API server running at http://localhost:8000 
-Config.toml
+config.toml
 ```toml
 assets = "path/to/static/folder"
 port = 4000
@@ -107,7 +110,7 @@ body = "{{body}}"
 ```
 
 ### Send a plain text response instead of the API response
-Config.toml
+config.toml
 ```toml
 assets = "path/to/static/folder"
 port = 4000
@@ -149,7 +152,7 @@ headers = { Content-Type = "text/plain" }
 ```
 
 ### Send HTML template response instead of API response
-Config.toml
+config.toml
 ```toml
 templates = "path/to/templates/folder"
 assets = "path/to/static/folder"
@@ -190,6 +193,12 @@ headers = { Content-Type = "text/html" }
 
 ## Docs
 ### config.toml
+Command line arguments take priority over config file if both are present.  
+
+Command line argument paths are relative to the current working directory.
+
+`config.toml` paths are relative to your own directory.
+
 Currently, any changes to `config.toml`, the server must be restarted for them to be applied.
 
 #### port: integer?
@@ -213,7 +222,7 @@ Optional string with the private key file path for the https server.
 Only if the `cert` and `key` are available will the server run over https.
 
 #### assets: string?
-Optional string with the static site folder path.
+Optional string with the static files folder path.
 
 #### templates: string?
 Optional string with the path to the [minijinja](https://github.com/mitsuhiko/minijinja) templates folder.
@@ -301,7 +310,7 @@ templates and dynamic routes
 
 ```
 cp tests/http.toml config.toml
-./target/release/minirps start config.toml
+minirps -c config.toml
 ```
 
 Running tests

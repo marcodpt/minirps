@@ -1,11 +1,13 @@
+use std::default::Default;
 use std::error::Error;
-use std::fs::{write, read, read_to_string, read_dir};
+use std::env::current_dir;
+use std::fs::{read, read_to_string, read_dir};
 use std::path::{Path, PathBuf};
 use std::collections::HashMap;
 use std::net::SocketAddr;
 use serde_derive::Deserialize;
 use serde_json::{Value, json};
-use clap::{Parser, Subcommand};
+use clap::{Parser};
 use toml;
 use mime_guess;
 use tower_http::cors::{Any, CorsLayer};
@@ -47,7 +49,7 @@ struct Route {
     response: Option<Res>
 }
 
-#[derive(Deserialize, Clone, Debug)]
+#[derive(Deserialize, Clone, Debug, Default)]
 struct Config {
     cors: Option<Vec<String>>,
     port: Option<u16>,
@@ -56,21 +58,6 @@ struct Config {
     assets: Option<String>, 
     templates: Option<String>, 
     routes: Option<Vec<Route>>
-}
-
-fn gen_config (path: &PathBuf) -> Result<(), Box<dyn Error>> {
-    let p = path.as_path();
-    if p.exists() {
-        return Err(format!("File already exists `{}`", p.display()).into());
-    }
-    let e = format!("File must have .toml extension `{}`", p.display());
-    let ext = p.extension().ok_or(e.clone())?;
-    if ext != "toml" {
-        return Err(e.into());
-    }
-    write(p, include_str!("../tests/default.toml"))?;
-    println!("New config file generated: `{}`", p.display());
-    Ok(())
 }
 
 fn build_assets (
@@ -245,11 +232,46 @@ async fn handler (
     Ok(response)
 }
 
-async fn start_server (path: &PathBuf) -> Result<(), Box<dyn Error>> {
-    let p = path.as_path();
-    let data = read_to_string(p)?;
-    let config: Config = toml::from_str(&data)?;
-    let dir = p.parent().ok_or("unreachable")?;
+#[derive(Parser)]
+#[command(author, version, about, long_about = None)]
+struct Cli {
+    /// config.toml file path.
+    #[clap(short='f', long)]
+    config: Option<PathBuf>,
+
+    /// static files folder path.
+    #[clap()]
+    assets: Option<PathBuf>, 
+
+    /// port number to run the server on.
+    #[clap(short, long)]
+    port: Option<u16>,
+
+    /// public key file path.
+    #[clap(short, long)]
+    cert: Option<PathBuf>,
+    
+    /// private key file path.
+    #[clap(short, long)]
+    key: Option<PathBuf>,
+
+    /// allow CORS from all origins.
+    #[clap(short, long)]
+    allow_cors: Option<bool>,
+}
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn Error>> {
+    let cli = Cli::parse();
+
+    let mut dir = current_dir()?;
+    let mut config: Config = Default::default();
+    if let Some(p) = cli.config {
+        let p = p.as_path();
+        let data = read_to_string(p)?;
+        config = toml::from_str(&data)?;
+        dir = p.parent().ok_or("unreachable")?.to_path_buf();
+    }
     let mut env = Environment::new();
     //println!("{:#?}", config);
 
@@ -358,7 +380,7 @@ async fn start_server (path: &PathBuf) -> Result<(), Box<dyn Error>> {
     };
     let app = app.with_state(state);
 
-    let port = config.port.unwrap_or(3000);
+    let port = cli.port.unwrap_or(config.port.unwrap_or(3000));
     let addr = SocketAddr::from(([127, 0, 0, 1], port));
 
     if config.cert.is_some() && config.key.is_some() {
@@ -378,37 +400,4 @@ async fn start_server (path: &PathBuf) -> Result<(), Box<dyn Error>> {
     }
 
     Ok(())
-}
-
-#[derive(Parser)]
-#[command(author, version, about, long_about = None)]
-struct Cli {
-    #[command(subcommand)]
-    command: Commands,
-}
-
-#[derive(Subcommand)]
-enum Commands {
-    /// Generate a config file sample
-    New {
-        /// Path for the generated config file
-        #[arg(value_name = "FILE", required = true)]
-        path: PathBuf,
-    },
-    /// Starts the server based on a given config file
-    Start {
-        /// Path for the config file
-        #[arg(value_name = "FILE", required = true)]
-        path: PathBuf,
-    },
-}
-
-#[tokio::main]
-async fn main() -> Result<(), Box<dyn Error>> {
-    let cli = Cli::parse();
-
-    match &cli.command {
-        Commands::New { path } => gen_config(path),
-        Commands::Start { path } => start_server(path).await
-    }
 }
