@@ -262,7 +262,7 @@ Ex.: `http://localhost:3000/api/users?name=john` => `name=john`
 #### headers: {header: string}
 The associated object of the headers passed by the client in the request.
 
-Observe that all headers keys are _lowercase_
+Note that all header keys are in **lowercase** letters.
 
 Ex: Content-Type: text/plain => {"content-type": "text/plain"}
 
@@ -280,14 +280,15 @@ Ex.: `http://localhost:3000/api/users?name=john` => `{"name": "john"}`
 The body passed by the client in the request.
 
 #### json
-The body passed by the client in the request json parsed, if it fails it also
-contains the body as a json string.
+The body passed by the client in the request converted to json.
+
+If it fails contains the body as a json string.
 
 #### data: {name: {status: integer, headers: {header: string}, body: string, json}}
 The data object is where is stored all results of the [reverse proxy](https://en.wikipedia.org/wiki/Reverse_proxy) array of requests. A result is stored only if there is a name associated with the request and is already available for the next request or response associated templates.
  - name: The keys of the object is the name passed in the array of `requests`.
  - status: The response status associated with the request.
- - headers: The response headers associated with the request (header name is always _lowercase_ in this object)
+ - headers: The response headers associated with the request (header name is always **lowercase** in this object)
  - body: The response body as string associated with the request.
  - json: Teh response body json parsed (or if fails as string) associated with the request.
 
