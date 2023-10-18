@@ -232,7 +232,7 @@ Optional array of objects that define [reverse proxy](https://en.wikipedia.org/w
    - CONNECT
  - `path` is a string with the path associated with the route, `:var` is acceptable for setting path variables (ex: /api/user/:id).
 
-#### routes.requests: [{name: string?, method: string, headers: {header: string}?, url: string, body: string?}]
+#### routes.requests: [{name: string?, method: string, headers: {header: string}?, url: string, body: string?}]?
 Requests is an optional array of objects that represent requests that need to be made to generate the response.
  - `name` is an optional string that will be used (if present) to store the response data associated with the request to be made available in [minijinja](https://github.com/mitsuhiko/minijinja) templates.
  - `method` is a required string containing the http method (or a [minijinja](https://github.com/mitsuhiko/minijinja) template) as described in the routes definition.
@@ -241,7 +241,7 @@ Requests is an optional array of objects that represent requests that need to be
  - `url` is a required [minijinja](https://github.com/mitsuhiko/minijinja) template or a raw string associated with the request.
  - `body` is an optional [minijinja](https://github.com/mitsuhiko/minijinja) template or a raw string associated with the request.
 
-#### routes.response {status: string?, headers: {header: string}?, body: string?}
+#### routes.response {status: string?, headers: {header: string}?, body: string?}?
 The response starts with the status, headers, and response body of the last request in the requests array, or if not present an empty 200 response, and the properties here are modifiers of the response sent by the [reverse proxy](https://en.wikipedia.org/wiki/Reverse_proxy) to the client.
  - `status` is an optional string or [minijinja](https://github.com/mitsuhiko/minijinja) template that represents an integer to modify the status code of the response.
  - `headers` is an optional object where the keys are the headers to be modified in the response and the values are a string or a [minijinja](https://github.com/mitsuhiko/minijinja) template representing the value associated with the header.
@@ -250,18 +250,19 @@ The response starts with the status, headers, and response body of the last requ
 ### Available [minijinja](https://github.com/mitsuhiko/minijinja) template variables
 
 #### path: string
-The associated path as passed by the client in the request.
+The associated path passed by the client in the request.
 
 Ex.: `/api/user/:id` => `/api/user/25`.
 
 #### query: string?
-The associated query string or `none` as passed by the client in the request.
+The associated query string or `none` passed by the client in the request.
 
 Ex.: `http://localhost:3000/api/users?name=john` => `name=john`
 
 #### headers: {header: string}
-The associated object of the headers as passed by the client in the request.
-Observe that all headers keys are *lowercase*
+The associated object of the headers passed by the client in the request.
+
+Observe that all headers keys are _lowercase_
 
 Ex: Content-Type: text/plain => {"content-type": "text/plain"}
 
@@ -286,7 +287,7 @@ contains the body as a json string.
 The data object is where is stored all results of the [reverse proxy](https://en.wikipedia.org/wiki/Reverse_proxy) array of requests. A result is stored only if there is a name associated with the request and is already available for the next request or response associated templates.
  - name: The keys of the object is the name passed in the array of `requests`.
  - status: The response status associated with the request.
- - headers: The response headers associated with the request (header name is always *lowercase* in this object)
+ - headers: The response headers associated with the request (header name is always _lowercase_ in this object)
  - body: The response body as string associated with the request.
  - json: Teh response body json parsed (or if fails as string) associated with the request.
 
