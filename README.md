@@ -190,23 +190,27 @@ headers = { Content-Type = "text/html" }
 
 ## Docs
 ### config.toml
-Currently any changes in `config.toml` you must reload the server to apply.
+Currently, any changes to `config.toml`, the server must be restarted for them to be applied.
 
 #### port: integer?
-Optional port integer to run the server, default: 3000
+Optional integer port number to run the server on, default: 3000
 
 #### cors: [string]?
 Optional array of strings representing allowed origins for [CORS](https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS) requests.
-An empty array allow all origins.
-If this variable is not setted [CORS](https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS) is disabled.
+
+An empty array allows all origins.
+
+If this variable is not defined,[CORS](https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS) will be disabled.
 
 #### cert: string?
-Optional string with the path of the public key file to https server.
-Only if `cert` and `key` is available the server will run in https.
+Optional string with the public key file path for the https server.
+
+Only if the `cert` and `key` are available will the server run over https.
 
 #### key: string?
-Optional string with the path of the private key file to https server.
-Only if `cert` and `key` is available the server will run in https.
+Optional string with the private key file path for the https server.
+
+Only if the `cert` and `key` are available will the server run over https.
 
 #### assets: string?
 Optional string with the path for the static site folder.
