@@ -1,5 +1,6 @@
-assets = "assets"
-templates = "templates"
+port = 4000
+assets = "../assets"
+templates = "../templates"
 
 ## blank route
 [[routes]]
@@ -30,7 +31,7 @@ path = "/vars/:id"
 [[routes.requests]]
 name = "crazy"
 method = "GET"
-url = "http://localhost:3000/tests/data.json"
+url = "http://localhost:4000/tests/data.json"
 
 [routes.response]
 status = "{% if query %}201{% else %}{{data.crazy.status}}{% endif %}"

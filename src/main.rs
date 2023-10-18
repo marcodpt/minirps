@@ -1,6 +1,5 @@
 use std::default::Default;
 use std::error::Error;
-use std::env::current_dir;
 use std::fs::{read, read_to_string, read_dir};
 use std::path::{Path, PathBuf};
 use std::collections::HashMap;
@@ -53,10 +52,10 @@ struct Route {
 struct Config {
     cors: Option<Vec<String>>,
     port: Option<u16>,
-    cert: Option<String>,
-    key: Option<String>,
-    assets: Option<String>, 
-    templates: Option<String>, 
+    cert: Option<PathBuf>,
+    key: Option<PathBuf>,
+    assets: Option<PathBuf>, 
+    templates: Option<PathBuf>, 
     routes: Option<Vec<Route>>
 }
 
@@ -264,23 +263,30 @@ struct Cli {
 async fn main() -> Result<(), Box<dyn Error>> {
     let cli = Cli::parse();
 
-    let mut dir = current_dir()?;
+    let mut env = Environment::new();
     let mut config: Config = Default::default();
     if let Some(p) = cli.config {
         let p = p.as_path();
         let data = read_to_string(p)?;
         config = toml::from_str(&data)?;
-        dir = p.parent().ok_or("unreachable")?.to_path_buf();
+        let dir = p.parent().ok_or("unreachable")?;
+        if let Some(templates) = config.templates {
+            let templates = dir.join(templates);
+            env.set_loader(path_loader(templates));
+        }
+        if let Some(assets) = config.assets {
+            config.assets = Some(dir.join(assets));
+        }
+        if let Some(cert) = config.cert {
+            config.cert = Some(dir.join(cert));
+        }
+        if let Some(key) = config.key {
+            config.key = Some(dir.join(key));
+        }
     }
-    let mut env = Environment::new();
     //println!("{:#?}", config);
 
     let mut app = Router::new();
-
-    if let Some(templates) = config.templates {
-        let templates = dir.join(templates);
-        env.set_loader(path_loader(templates));
-    }
 
     let mut r = 0;
     let mut routes: Vec<Route> = Vec::new();
@@ -348,8 +354,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     }
     //println!("{:#?}", routes);
 
-    if let Some(assets) = config.assets {
-        let assets = dir.join(assets);
+    if let Some(assets) = cli.assets.or(config.assets) {
         app = build_assets(&assets, &assets, app)?;
     }
 
@@ -382,10 +387,12 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     let port = cli.port.unwrap_or(config.port.unwrap_or(3000));
     let addr = SocketAddr::from(([127, 0, 0, 1], port));
+    let cert = cli.cert.or(config.cert);
+    let key = cli.key.or(config.key);
 
-    if config.cert.is_some() && config.key.is_some() {
-        let cert = dir.join(config.cert.ok_or("unreachable")?);
-        let key = dir.join(config.key.ok_or("unreachable")?);
+    if cert.is_some() && key.is_some() {
+        let cert = cert.ok_or("unreachable")?;
+        let key = key.ok_or("unreachable")?;
         let tls = RustlsConfig::from_pem(read(cert)?, read(key)?).await?;
 
         println!("Server started at https://localhost:{}", port);

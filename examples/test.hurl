@@ -1,6 +1,6 @@
 # Checking assets folder
 
-GET http://localhost:3000/
+GET http://localhost:4000/
 HTTP/1.1 200
 Content-Type: text/html
 [Captures]
@@ -9,20 +9,20 @@ home: body
 body contains "<title>MiniRPS Demo</title>"
 body == {{home}}
 
-GET http://localhost:3000/index.html
+GET http://localhost:4000/index.html
 HTTP/1.1 200
 Content-Type: text/html
 [Asserts]
 body == {{home}}
 
-GET http://localhost:3000/favicon.ico
+GET http://localhost:4000/favicon.ico
 HTTP/1.1 200
 Content-Type: image/x-icon
 Content-Length: 15086
 [Asserts]
 bytes count == 15086
 
-GET http://localhost:3000/certs/cert.txt
+GET http://localhost:4000/certs/cert.txt
 HTTP/1.1 200
 Content-Type: text/plain
 ```
@@ -50,7 +50,7 @@ AopvZ09uEQ==
 -----END CERTIFICATE-----
 ```
 
-GET http://localhost:3000/certs/key.txt
+GET http://localhost:4000/certs/key.txt
 HTTP/1.1 200
 Content-Type: text/plain
 ```
@@ -84,7 +84,7 @@ w37pCS7ykL+7gp7V0WShYsw=
 -----END PRIVATE KEY-----
 ```
 
-GET http://localhost:3000/tests/data.json
+GET http://localhost:4000/tests/data.json
 HTTP/1.1 200
 Content-Type: application/json
 ```
@@ -100,7 +100,7 @@ Content-Type: application/json
 
 # Checking blank route
 
-GET http://localhost:3000/blank
+GET http://localhost:4000/blank
 ```
 Some body data
 ```
@@ -108,7 +108,7 @@ HTTP/1.1 200
 [Asserts]
 body == ""
 
-POST http://localhost:3000/blank
+POST http://localhost:4000/blank
 ```
 Some body data
 ```
@@ -116,7 +116,7 @@ HTTP/1.1 405
 [Asserts]
 body == ""
 
-PUT http://localhost:3000/blank
+PUT http://localhost:4000/blank
 ```
 Some body data
 ```
@@ -124,7 +124,7 @@ HTTP/1.1 405
 [Asserts]
 body == ""
 
-DELETE http://localhost:3000/blank
+DELETE http://localhost:4000/blank
 ```
 Some body data
 ```
@@ -132,7 +132,7 @@ HTTP/1.1 405
 [Asserts]
 body == ""
 
-GET http://localhost:3000/blank/34
+GET http://localhost:4000/blank/34
 ```
 Some body data
 ```
@@ -140,7 +140,7 @@ HTTP/1.1 405
 [Asserts]
 body == ""
 
-POST http://localhost:3000/blank/34
+POST http://localhost:4000/blank/34
 ```
 Some body data
 ```
@@ -148,7 +148,7 @@ HTTP/1.1 405
 [Asserts]
 body == ""
 
-PUT http://localhost:3000/blank/34
+PUT http://localhost:4000/blank/34
 ```
 Some body data
 ```
@@ -156,7 +156,7 @@ HTTP/1.1 200
 [Asserts]
 body == ""
 
-DELETE http://localhost:3000/blank/34
+DELETE http://localhost:4000/blank/34
 ```
 Some body data
 ```
@@ -165,7 +165,7 @@ HTTP/1.1 405
 body == ""
 
 # Extracting data showcase
-POST http://localhost:3000/vars/345
+POST http://localhost:4000/vars/345
 Content-Type: text/html
 X-Set-Content: text/plain
 `<h1>Data</h1>`
@@ -185,7 +185,7 @@ body contains "json.id: 38"
 body contains "\"z\": true"
 
 # Extracting data showcase
-POST http://localhost:3000/vars/test?x=60
+POST http://localhost:4000/vars/test?x=60
 Content-Type: text/html
 X-Set-Content: text/plain
 `<h1>Data</h1>`
@@ -205,7 +205,7 @@ body contains "json.id: 38"
 body contains "\"z\": true"
 
 # Dynamic route
-GET http://localhost:3000/set/POST/pet?x=dog
+GET http://localhost:4000/set/POST/pet?x=dog
 `Some body data`
 HTTP/1.1 200
 Content-Type: application/json
@@ -217,7 +217,7 @@ jsonpath "$.data" == "Some body data"
 jsonpath "$.headers.X-Set" == "some-data"
 jsonpath "$.headers.X-Var" == "dog"
 
-GET http://localhost:3000/set/PUT/70
+GET http://localhost:4000/set/PUT/70
 `Some body data`
 HTTP/1.1 200
 Content-Type: application/json

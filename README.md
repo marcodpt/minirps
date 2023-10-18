@@ -191,6 +191,20 @@ body = "{% include 'edit.html' %}"
 headers = { Content-Type = "text/html" }
 ```
 
+## Examples
+
+### test
+In this example, a static server and some routes are built to test the use of
+reverse proxy and templates automatically using [hurl](https://github.com/Orange-OpenSource/hurl).
+
+```
+minirps -f examples/test.toml
+```
+
+```
+hurl --test examples/test.hurl
+```
+
 ## Docs
 ### config.toml
 Command line arguments take priority over config file if both are present.  
@@ -302,18 +316,14 @@ The data object is where all the results of the [reverse proxy](https://en.wikip
  - `body`: The response body as a string associated with the request.
  - `json`: The response body converted to json (or if it fails as json string) associated with the request.
 
-## Tests
+## Contributing
+It's a very simple project. Any contribution is greatly appreciated.
 
-### http
-Used to test a complete server without certs, it contains a static folder,
-templates and dynamic routes
+## Acknowledgment
+This work would not be possible if it were not for these related projects:
+ - [minijinja](https://github.com/mitsuhiko/minijinja)
+ - [axum](https://github.com/tokio-rs/axum)
+ - [reqwest](https://github.com/seanmonstar/reqwest)
+ - [hurl](https://github.com/Orange-OpenSource/hurl)
 
-```
-cp tests/http.toml config.toml
-minirps -c config.toml
-```
-
-Running tests
-```
-hurl --test tests/http.hurl
-```
+A huge thank you to all the people who contributed to these projects.
