@@ -233,18 +233,19 @@ Optional array of objects that define [reverse proxy](https://en.wikipedia.org/w
  - `path` is a string with the path associated with the route, `:var` is acceptable for setting path variables (ex: /api/user/:id).
 
 #### routes.requests: [{name: string?, method: string, headers: {header: string}?, url: string, body: string?}]
-Requests is an optional array of objects representing requests that needs to be done to generate response.
- - `name` is an optional string that will be used to (if present) to store the response data associated with the request to be available in [minijinja](https://github.com/mitsuhiko/minijinja) templates.
- - `method` is a required http method as described in the `routes` definition, but it is also a [minijinja](https://github.com/mitsuhiko/minijinja) template, so you are able to use some logic here.
+Requests is an optional array of objects that represent requests that need to be made to generate the response.
+ - `name` is an optional string that will be used (if present) to store the response data associated with the request to be made available in [minijinja](https://github.com/mitsuhiko/minijinja) templates.
+ - `method` is a required string containing the http method (or a [minijinja](https://github.com/mitsuhiko/minijinja) template) as described in the routes definition.
  - `headers` is an object with the keys been the header to be setted in the request and the values a string containing the value of the header or a [minijinja](https://github.com/mitsuhiko/minijinja) template to generate it.
+ - `headers` is an object with the keys being the header to be configured in the request and the values being a string containing the header value or a [minijinja](https://github.com/mitsuhiko/minijinja) template to generate it.
  - `url` is a required [minijinja](https://github.com/mitsuhiko/minijinja) template or a raw string associated with the request.
  - `body` is an optional [minijinja](https://github.com/mitsuhiko/minijinja) template or a raw string associated with the request.
 
 #### routes.response {status: string?, headers: {header: string}?, body: string?}
-Response starts with the `status`, `headers` and `body` of the response of the last request in the array of `requests` or if is not present an empty 200 response, and the properties here are modifiers to the response sended by the [reverse proxy](https://en.wikipedia.org/wiki/Reverse_proxy) to the client.
- - `status` is an optional string or a [minijinja](https://github.com/mitsuhiko/minijinja) template representing an integer to modify the status code of the response.
- - `headers` is an optional object where the keys are the headers to be setted or modified in the response and the values a string or a [minijinja](https://github.com/mitsuhiko/minijinja) template representing the value associated with the header.
- - `body` is an optional string or [minijinja](https://github.com/mitsuhiko/minijinja) template with the body to be replaced the original response body.
+The response starts with the status, headers, and response body of the last request in the requests array, or if not present an empty 200 response, and the properties here are modifiers of the response sent by the [reverse proxy](https://en.wikipedia.org/wiki/Reverse_proxy) to the client.
+ - `status` is an optional string or [minijinja](https://github.com/mitsuhiko/minijinja) template that represents an integer to modify the status code of the response.
+ - `headers` is an optional object where the keys are the headers to be modified in the response and the values are a string or a [minijinja](https://github.com/mitsuhiko/minijinja) template representing the value associated with the header.
+ - `body` is an optional string or [minijinja](https://github.com/mitsuhiko/minijinja) template with the body to be replaced with the original response body.
 
 ### Available [minijinja](https://github.com/mitsuhiko/minijinja) template variables
 
