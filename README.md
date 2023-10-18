@@ -201,8 +201,8 @@ Currently any changes in `config.toml` you must reload the server to apply.
 #### port: integer?
 Optional port integer to run the server, default: 3000
 
-#### cors: array of strings?
-Optional array of allowed origins for CORS requests.
+#### cors: [string]?
+Optional array of strings representing allowed origins for CORS requests.
 An empty array allow all origins.
 If this variable is not setted CORS is disabled.
 
@@ -226,7 +226,76 @@ This folder is dinamically readed so you can edit files without problems.
 But the templates inside `config.toml` are readed only on startup, and in case
 of changes you must restart the server.
 
-### Available template variables
+#### routes: [{method: string, path: string, requests: [{...}]?, response: {...}?}]
+Optional array of objects that defines the reverse proxy routes:
+ - `method` is a string with one of the http methods:
+   - GET
+   - POST
+   - DELETE
+   - PUT
+   - PATCH
+   - HEAD
+   - OPTIONS
+   - TRACE
+   - CONNECT
+ - `path` is a string with the associated path to the route, `:var` is acceptable to define path variables. ex: /api/user/:id
+
+#### requests: [{name: string?, method: string, headers: {header: string}?, url: string, body: string?}]
+Requests is an optional array of objects representing requests that needs to be done to generate response.
+ - `name` is an optional string that will be used to (if present) to store the response data associated with the request to be available in minijinja templates.
+ - `method` is a required http method as described in the `routes` definition, but it is also a minijinja template, so you are able to use some logic here.
+ - `headers` is an object with the keys been the header to be setted in the request and the values a string containing the value of the header or a minijinja template to generate it.
+ - `url` is a required minijinja template or a raw string associated with the request.
+ - `body` is an optional minijinja template or a raw string associated with the request.
+
+#### response {status: string?, headers: {header: string}?, body: string?}
+Response starts with the `status`, `headers` and `body` of the response of the last request in the array of `requests` or if is not present an empty 200 response, and the properties here are modifiers to the response sended by the reserve proxy to the client.
+ - `status` is an optional string or a minijinja template representing an integer to modify the status code of the response.
+ - `headers` is an optional object where the keys are the headers to be setted or modified in the response and the values a string or a minijinja template representing the value associated with the header.
+ - `body` is an optional string or minijinja template with the body to be replaced the original response body.
+
+### Available minijinja template variables
+
+#### path: string
+The associated path as passed by the client in the request.
+
+Ex.: `/api/user/:id` => `/api/user/25`.
+
+#### query: string?
+The associated query string or `none` as passed by the client in the request.
+
+Ex.: `http://localhost:3000/api/users?name=john` => `name=john`
+
+#### headers: {header: string}
+The associated object of the headers as passed by the client in the request.
+Observe that all headers keys are *lowercase*
+
+Ex: Content-Type: text/plain => {"content-type": "text/plain"}
+
+#### params: {param: string}
+The associated object of the path params associated with the client request on a given route.
+
+Ex: `/api/user/:id` => `http://localhost:3000/api/user/25` => {"id": "25"}
+
+#### vars: {param: string}
+The associated object of the query params associated with the client request.
+
+Ex.: `http://localhost:3000/api/users?name=john` => `{"name": "john"}`
+
+#### body: string
+The body passed by the client in the request.
+
+#### json
+The body passed by the client in the request json parsed, if it fails it also
+contains the body as a json string.
+
+#### data: {name: {status: integer, headers: {header: string}, body: string, json}}
+The data object is where is stored all results of the reverse proxy array of requests. A result is stored only if there is a name associated with the request and is already available for the next request or response associated templates.
+ - name: The keys of the object is the name passed in the array of `requests`.
+ - status: The response status associated with the request.
+ - headers: The response headers associated with the request (header name is always *lowercase* in this object)
+ - body: The response body as string associated with the request.
+ - json: Teh response body json parsed (or if fails as string) associated with the request.
 
 ## Tests
 
