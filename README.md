@@ -213,19 +213,13 @@ Optional string with the private key file path for the https server.
 Only if the `cert` and `key` are available will the server run over https.
 
 #### assets: string?
-Optional string with the path for the static site folder.
-Currently any file added you must reload the server to apply.
-The data inside the file is dynamically readed so files editions is already
-covered.
+Optional string with the static site folder path.
 
 #### templates: string?
-Optional string with the path for your [minijinja](https://github.com/mitsuhiko/minijinja) templates folder.
-This folder is dinamically readed so you can edit files without problems.
-But the templates inside `config.toml` are readed only on startup, and in case
-of changes you must restart the server.
+Optional string with the path to the [minijinja](https://github.com/mitsuhiko/minijinja) templates folder.
 
 #### routes: [{method: string, path: string, requests: [{...}]?, response: {...}?}]
-Optional array of objects that defines the [reverse proxy](https://en.wikipedia.org/wiki/Reverse_proxy) routes:
+Optional array of objects that define [reverse proxy](https://en.wikipedia.org/wiki/Reverse_proxy) routes:
  - `method` is a string with one of the http methods:
    - GET
    - POST
@@ -236,7 +230,7 @@ Optional array of objects that defines the [reverse proxy](https://en.wikipedia.
    - OPTIONS
    - TRACE
    - CONNECT
- - `path` is a string with the associated path to the route, `:var` is acceptable to define path variables. ex: /api/user/:id
+ - `path` is a string with the path associated with the route, `:var` is acceptable for setting path variables (ex: /api/user/:id).
 
 #### routes.requests: [{name: string?, method: string, headers: {header: string}?, url: string, body: string?}]
 Requests is an optional array of objects representing requests that needs to be done to generate response.
