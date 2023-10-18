@@ -3,11 +3,11 @@ Mini [reverse proxy](https://en.wikipedia.org/wiki/Reverse_proxy) server written
 
 ## Features
  - [X] very fast single binary with no dependencies
- - [X] static files server
+ - [X] static file server
  - [X] [reverse proxy](https://en.wikipedia.org/wiki/Reverse_proxy) router
  - [X] https
  - [X] [CORS](https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS)
- - [X] consume any API data and create customized responses with [minijinja](https://github.com/mitsuhiko/minijinja) templates
+ - [X] consume any API data and create custom responses with [minijinja](https://github.com/mitsuhiko/minijinja) templates
  - [X] extensively tested with [hurl](https://github.com/Orange-OpenSource/hurl)
  - [ ] cache rules
  - [ ] hot reload server in case of file changes
@@ -31,7 +31,7 @@ assets = "path/to/static/folder"
 port = 4000
 ```
 
-### Use https instead of http
+### Using https instead of http
 Config.toml
 ```toml
 assets = "path/to/static/folder"
@@ -40,19 +40,7 @@ cert = "path/to/cert.pem"
 key = "path/to/key.pem"
 ```
 
-### Allow cors from my site
-Config.toml
-```toml
-assets = "path/to/static/folder"
-port = 4000
-cert = "path/to/cert.pem"
-key = "path/to/key.pem"
-cors = [
-  "https://www.my-site.com"
-]
-```
-
-### Allow cors from my sites in many scenarios
+### Allow [CORS](https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS) for my website
 Config.toml
 ```toml
 assets = "path/to/static/folder"
@@ -60,14 +48,26 @@ port = 4000
 cert = "path/to/cert.pem"
 key = "path/to/key.pem"
 cors = [
-  "http://www.my-site.com",
-  "https://www.my-site.com",
-  "http://www.my-other-site.com",
-  "https://www.my-other-site.com"
+  "https://www.my-website.com"
 ]
 ```
 
-### Allow cors from all origins
+### Allow [CORS](https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS) from my websites of varying origins 
+Config.toml
+```toml
+assets = "path/to/static/folder"
+port = 4000
+cert = "path/to/cert.pem"
+key = "path/to/key.pem"
+cors = [
+  "http://www.my-website.com",
+  "https://www.my-website.com",
+  "http://www.my-other-website.com",
+  "https://www.my-other-website.com"
+]
+```
+
+### Allow [CORS](https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS) from all origins
 Config.toml
 ```toml
 assets = "path/to/static/folder"
@@ -77,7 +77,7 @@ key = "path/to/key.pem"
 cors = []
 ```
 
-### Add a [reverse proxy](https://en.wikipedia.org/wiki/Reverse_proxy) to a API server running at http://localhost:8000 
+### Add a [reverse proxy](https://en.wikipedia.org/wiki/Reverse_proxy) to an API server running at http://localhost:8000 
 Config.toml
 ```toml
 assets = "path/to/static/folder"
@@ -106,7 +106,7 @@ url = "http://localhost:8000/users/{{params.id}}"
 body = "{{body}}"
 ```
 
-### Send text message response instead of API response
+### Send a plain text response instead of the API response
 Config.toml
 ```toml
 assets = "path/to/static/folder"
@@ -148,10 +148,10 @@ body = "{% if data.result.status == 200 %}SUCCESS!{% else %}ERROR!{% endif %}"
 headers = { Content-Type = "text/plain" }
 ```
 
-### Send great HTML template response instead of API response
+### Send HTML template response instead of API response
 Config.toml
 ```toml
-templates = "path/to/my/great/[minijinja](https://github.com/mitsuhiko/minijinja)/templates/folder"
+templates = "path/to/templates/folder"
 assets = "path/to/static/folder"
 port = 4000
 cert = "path/to/cert.pem"
@@ -186,12 +186,6 @@ body = "{{body}}"
 [routes.response]
 body = "{% include 'edit.html' %}"
 headers = { Content-Type = "text/html" }
-```
-
-### Consume an open API star wars data 
-```
-./target/release/minirps new config.toml
-./target/release/minirps start config.toml
 ```
 
 ## Docs
