@@ -256,7 +256,7 @@ struct Cli {
 
     /// allow CORS from all origins.
     #[clap(short, long)]
-    allow_cors: Option<bool>,
+    allow_cors: bool,
 }
 
 #[tokio::main]
@@ -265,6 +265,10 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     let mut env = Environment::new();
     let mut config: Config = Default::default();
+    let cors: Option<Vec<String>> = match cli.allow_cors {
+        true => Some(Vec::new()),
+        false => None
+    };
     if let Some(p) = cli.config {
         let p = p.as_path();
         let data = read_to_string(p)?;
@@ -284,7 +288,6 @@ async fn main() -> Result<(), Box<dyn Error>> {
             config.key = Some(dir.join(key));
         }
     }
-    //println!("{:#?}", config);
 
     let mut app = Router::new();
 
@@ -365,12 +368,12 @@ async fn main() -> Result<(), Box<dyn Error>> {
         ));
     }
 
-    if let Some(origins) = config.cors {
+    if let Some(origins) = cors.or(config.cors) {
         let mut layer = CorsLayer::new()
             .allow_methods(Any);
 
         if origins.len() == 0 {
-            layer = layer.allow_origin(Any)
+            layer = layer.allow_origin(Any);
         }
         for origin in origins {
             layer = layer.allow_origin(origin.parse::<HeaderValue>()?);

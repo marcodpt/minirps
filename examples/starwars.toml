@@ -1,34 +1,13 @@
-# Use an empty array to allow CORS requests across all origins.
-# Otherwise, specify a list of allowed origins.
-# Uncomment the line below to enable CORS on all origins.
-# cors = []
-
-# Port to run the application.
-# If no port is passed, it will use port 3000 by default.
-port = 3000
-
-# Path to https certificate files relative to this file.
-# If any files are missing, it will use an unencrypted http connection.
-cert = "assets/certs/cert.txt"
-key = "assets/certs/key.txt"
-
-# Path to the static files folder relative to this file.
-# You can comment the line below if you don't want to use this feature.
-assets = "assets"
-
-# Minijinja templates folders available for all routes.
-# You can comment the line below if you don't want to use this feature.
-templates = "templates"
-
-# For this example we will create an interface for starwars data available at:
-# https://swapi.dev/
+cert = "../assets/certs/cert.txt"
+key = "../assets/certs/key.txt"
+templates = "../templates"
 
 [[routes]]
 method = "GET"
-path = "/demo"
+path = "/"
 
 [routes.response]
-body = "{% include 'demo.html' %}"
+body = "{% include 'home.html' %}"
 
 [routes.response.headers]
 Content-Type = "text/html"

@@ -13,6 +13,11 @@ Mini [reverse proxy](https://en.wikipedia.org/wiki/Reverse_proxy) server written
  - [ ] hot reload server in case of file changes
  - [ ] define once an array of requests based on a variable
 
+## Install
+```
+cargo install minirps
+```
+
 ## Usage
 
 ### Simple static file server
@@ -38,7 +43,7 @@ minirps -a -p 4000 path/to/static/folder -c path/to/cert.pem -k path/to/key.pem
 ### Start the server with a config.toml file
 Here the limit of possible configurations passed by command line has been reached.
 
-To create more complex and interesting examples we need a config.toml file
+To create more complex and interesting examples we need a `config.toml` file
 ```
 minirps -f path/to/config.toml
 ```
@@ -193,9 +198,33 @@ headers = { Content-Type = "text/html" }
 
 ## Examples
 
+### static server with cors
+In this example, a static server was created and also a
+[CORS](https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS)
+request as a showcase.
+
+Static server
+```
+minirps assets
+```
+
+[CORS](https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS) server
+```
+minirps assets/tests -a -p 4000 -c assets/certs/cert.txt -k assets/certs/key.txt
+```
+
+### starwars
+In this example minijinja templates were used to consume data from
+[swapi's](https://swapi.dev/) Star Wars API.
+
+```
+minirps -f examples/starwars.toml
+```
+
 ### test
 In this example, a static server and some routes are built to test the use of
-reverse proxy and templates automatically using [hurl](https://github.com/Orange-OpenSource/hurl).
+reverse proxy and templates automatically using
+[hurl](https://github.com/Orange-OpenSource/hurl).
 
 ```
 minirps -f examples/test.toml

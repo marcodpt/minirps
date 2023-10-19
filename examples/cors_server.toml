@@ -1,4 +1,0 @@
-cors = []
-cert = "../assets/cert.pem"
-key = "../assets/key.pem"
-assets = "."
