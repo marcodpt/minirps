@@ -1,6 +1,6 @@
 [package]
 name = "minirps"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 authors = ["Marco Di Pillo Tomic <marcodpt@protonmail.com>"]
 license = "MIT"
@@ -18,10 +18,11 @@ keywords = [
 categories = ["web-programming::http-server"]
 
 [dependencies]
+openssl = { version = "0.10", features = ["vendored"] }
 tokio = { version = "1", features = ["full"] }
 tower-http = { version = "0", features = ["cors"] }
 axum = { version = "0", features = ["matched-path", "original-uri", "query"] }
-axum-server = { version = "0", features = ["tls-rustls"] }
+axum-server = { version = "0", features = ["tls-openssl"] }
 clap = {version = "4", features = ["derive"]}
 toml = "0"
 serde = "1"

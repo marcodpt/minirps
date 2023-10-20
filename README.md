@@ -345,6 +345,15 @@ The data object is where all the results of the [reverse proxy](https://en.wikip
  - `body`: The response body as a string associated with the request.
  - `json`: The response body converted to json (or if it fails as json string) associated with the request.
 
+## Releases
+Currently, only binaries for generic versions of Linux are distributed across
+releases.
+```
+sudo apt install pkg-config libssl-dev musl-tools
+rustup target add x86_64-unknown-linux-musl
+cargo build --release --target x86_64-unknown-linux-musl
+```
+
 ## Contributing
 It's a very simple project. Any contribution is greatly appreciated.
 

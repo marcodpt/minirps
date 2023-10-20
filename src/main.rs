@@ -20,7 +20,7 @@ use axum::{
         HeaderMap, HeaderName, HeaderValue, CONTENT_TYPE
     }}
 };
-use axum_server::tls_rustls::RustlsConfig;
+use axum_server::tls_openssl::OpenSSLConfig;
 use minijinja::{Environment, path_loader};
 use reqwest::{Request, RequestBuilder, Client};
 
@@ -396,10 +396,10 @@ async fn main() -> Result<(), Box<dyn Error>> {
     if cert.is_some() && key.is_some() {
         let cert = cert.ok_or("unreachable")?;
         let key = key.ok_or("unreachable")?;
-        let tls = RustlsConfig::from_pem(read(cert)?, read(key)?).await?;
+        let config = OpenSSLConfig::from_pem_file(cert, key)?;
 
         println!("Server started at https://localhost:{}", port);
-        axum_server::bind_rustls(addr, tls)
+        axum_server::bind_openssl(addr, config)
             .serve(app.into_make_service())
             .await?;
     } else {
