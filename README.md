@@ -2,16 +2,13 @@
 Mini [reverse proxy](https://en.wikipedia.org/wiki/Reverse_proxy) server written in rust
 
 ## Features
- - [X] very fast single binary with no dependencies
- - [X] static file server
- - [X] [reverse proxy](https://en.wikipedia.org/wiki/Reverse_proxy) router
- - [X] https
- - [X] [CORS](https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS)
- - [X] consume any API data and create custom responses with [minijinja](https://github.com/mitsuhiko/minijinja) templates
- - [X] extensively tested with [hurl](https://github.com/Orange-OpenSource/hurl)
- - [ ] cache rules
- - [ ] hot reload server in case of file changes
- - [ ] define once an array of requests based on a variable
+ - very fast single binary with no dependencies
+ - static file server
+ - [reverse proxy](https://en.wikipedia.org/wiki/Reverse_proxy) router
+ - HTTPS
+ - [CORS](https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS)
+ - consume any API data and create custom responses with [minijinja](https://github.com/mitsuhiko/minijinja) templates
+ - extensively tested with [hurl](https://github.com/Orange-OpenSource/hurl)
 
 ## Install
 ```
