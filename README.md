@@ -208,7 +208,7 @@ body = "{% include 'edit.html' %}"
 headers = { Content-Type = "text/html" }
 ```
 
-## Examples 🎬
+## Examples 🧪
 
 ### static server with cors
 In this example, a static server was created and also a
@@ -233,7 +233,7 @@ In this example minijinja templates were used to consume data from
 minirps -f examples/starwars.toml
 ```
 
-### test 🧪
+### test
 In this example, a static server and some routes are built to test the use of
 reverse proxy and templates automatically using
 [hurl](https://github.com/Orange-OpenSource/hurl).
