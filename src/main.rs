@@ -60,14 +60,22 @@ struct Config {
 }
 
 fn build_assets (
-    base: &Path, dir: &Path, mut app: Router<AppState>
+    all: bool, base: &Path, dir: &Path, mut app: Router<AppState>
 ) -> Result<Router<AppState>, Box<dyn Error>> {
     for entry in read_dir(dir)? {
         let entry = entry?;
         let path = entry.path();
-        if path.is_dir() {
-            app = build_assets(base, &path, app)?;
-        } else {
+        let mut ignore = !all;
+        if ignore {
+            ignore = match path.file_name() {
+                Some(name) => name
+                    .to_str().unwrap_or("").as_bytes()[0] == b'.',
+                None => false
+            };
+        }
+        if path.is_dir() && !ignore {
+            app = build_assets(all, base, &path, app)?;
+        } else if !ignore {
             let route = match path.strip_prefix(&base) {
                 Ok(route) => Path::new("/").join(route),
                 Err(_) => path.clone()
@@ -255,8 +263,12 @@ struct Cli {
     key: Option<PathBuf>,
 
     /// allow CORS from all origins.
-    #[clap(short, long)]
+    #[clap(short='o', long)]
     allow_cors: bool,
+
+    /// all files, include hidden files
+    #[clap(short, long)]
+    all: bool,
 }
 
 #[tokio::main]
@@ -358,7 +370,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     //println!("{:#?}", routes);
 
     if let Some(assets) = cli.assets.or(config.assets) {
-        app = build_assets(&assets, &assets, app)?;
+        app = build_assets(cli.all, &assets, &assets, app)?;
     }
 
     for route in &routes {

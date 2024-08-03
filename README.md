@@ -34,7 +34,7 @@ minirps -p 4000 path/to/static/folder -c path/to/cert.pem -k path/to/key.pem
 
 ### Allow [CORS](https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS) from all origins
 ```
-minirps -a -p 4000 path/to/static/folder -c path/to/cert.pem -k path/to/key.pem
+minirps -o -p 4000 path/to/static/folder -c path/to/cert.pem -k path/to/key.pem
 ```
 
 ### Start the server with a config.toml file
@@ -207,7 +207,7 @@ minirps assets
 
 [CORS](https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS) server
 ```
-minirps assets/tests -a -p 4000 -c assets/certs/cert.txt -k assets/certs/key.txt
+minirps assets/tests -o -p 4000 -c assets/certs/cert.txt -k assets/certs/key.txt
 ```
 
 ### starwars
