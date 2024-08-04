@@ -11,14 +11,12 @@
     <main>
       <h1>CORS test => fetch https://localhost:4000/data.json</h1>
       <code>
-        minirps assets/tests -a -p 4000
-          -c assets/certs/cert.txt
-          -k assets/certs/key.txt
+        minirps assets -o -p 4000 -c assets/certs/cert.txt -k assets/certs/key.txt
       </code>
-    <p style="white-space:pre-wrap"></p>
+      <p style="white-space:pre-wrap"></p>
     </main>
     <script>
-      fetch('https://localhost:4000/data.json')
+      fetch('https://localhost:4000/tests/data.json')
         .then(response => response.text())
         .then(data => document.body
           .querySelector('p')

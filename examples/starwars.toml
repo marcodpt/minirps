@@ -1,5 +1,3 @@
-cert = "../assets/certs/cert.txt"
-key = "../assets/certs/key.txt"
 templates = "../templates"
 
 [[routes]]

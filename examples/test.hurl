@@ -98,6 +98,28 @@ Content-Type: application/json
 }
 ```
 
+GET http://localhost:4000/tests/deep/msg.txt
+HTTP/1.1 200
+Content-Type: text/plain
+```
+Deep message!
+```
+
+GET http://localhost:4000/.hidden.txt
+HTTP/1.1 404
+[Asserts]
+body == ""
+
+GET http://localhost:4000/.secret/hello.txt
+HTTP/1.1 404
+[Asserts]
+body == ""
+
+GET http://localhost:4000/tests/.hi.txt
+HTTP/1.1 404
+[Asserts]
+body == ""
+
 # Checking blank route
 
 GET http://localhost:4000/blank
