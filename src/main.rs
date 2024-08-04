@@ -13,9 +13,7 @@ use tower_http::cors::{Any, CorsLayer};
 use axum::{
     response::{IntoResponse, Response},
     extract::{OriginalUri, Path as Params, Query, State, MatchedPath},
-    routing::{get, on},
-    Router,
-    Server,
+    routing::{get, on, Router},
     http::{StatusCode, Method, header::{
         HeaderMap, HeaderName, HeaderValue, CONTENT_TYPE
     }}
@@ -438,7 +436,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
             .await?;
     } else {
         println!("Server started at http://localhost:{}", port);
-        Server::bind(&addr)
+        axum_server::bind(addr)
             .serve(app.into_make_service())
             .await?;
     }

@@ -410,6 +410,7 @@ releases.
 sudo apt install pkg-config libssl-dev musl-tools
 rustup update
 rustup target add x86_64-unknown-linux-musl
+cargo update
 cargo build --release --target x86_64-unknown-linux-musl
 ```
 
