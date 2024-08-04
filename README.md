@@ -25,7 +25,13 @@ files, and orchestrate other services.
 cargo install minirps
 ```
 
+Alternatively you can use one of the precompiled binaries available with each
+release (currently generic Linux only).
+
 ## Usage 🎮
+```
+minirps -h
+```
 
 ### Simple static file server
 ```
@@ -35,6 +41,16 @@ minirps path/to/static/folder
 ### Serve hidden files
 ```
 minirps -a path/to/static/folder
+```
+
+### Ignore markdown files in root folder
+```
+minirps -i "/*.md" path/to/static/folder
+```
+
+### Ignore any markdown files
+```
+minirps -i "/**/*.md" path/to/static/folder
 ```
 
 ### Running on port 4000 instead of 3000
@@ -58,6 +74,19 @@ Here the limit of possible configurations passed by command line has been reache
 To create more complex and interesting examples we need a `config.toml` file
 ```
 minirps -f path/to/config.toml
+```
+
+### Ignore any markdown files and files starting with secret\_ in the root folder
+config.toml
+```toml
+assets = "path/to/static/folder"
+port = 4000
+cert = "path/to/cert.pem"
+key = "path/to/key.pem"
+ignore = [
+  "/**/*.md",
+  "/secret_*"
+]
 ```
 
 ### Allow [CORS](https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS) for my website
@@ -226,8 +255,8 @@ minirps assets/tests -o -p 4000 -c assets/certs/cert.txt -k assets/certs/key.txt
 ```
 
 ### starwars
-In this example minijinja templates were used to consume data from
-[swapi's](https://swapi.dev/) Star Wars API.
+In this example [minijinja](https://github.com/mitsuhiko/minijinja) templates
+were used to consume data from [swapi's](https://swapi.dev/) Star Wars API.
 
 ```
 minirps -f examples/starwars.toml
@@ -258,6 +287,23 @@ Currently, any changes to `config.toml`, the server must be restarted for them t
 
 #### port: integer?
 Optional integer port number to run the server on, default: 3000
+
+#### all: bool
+Whether to display hidden files. 
+
+In case of confirmation via the command line or `config.toml` they will be
+displayed.
+
+#### ignore: [string]?
+List of files to ignore using glob expressions.
+
+If the -i option is passed on the command line it will be appended to the list.
+
+The routes must be considered in relation to the assets folder and not the
+working directory.
+
+For a complete reference of glob expressions and possible bugs check this
+[library](https://github.com/devongovett/glob-match).
 
 #### cors: [string]?
 Optional array of strings representing allowed origins for [CORS](https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS) requests.
@@ -362,6 +408,7 @@ Currently, only binaries for generic versions of Linux are distributed across
 releases.
 ```
 sudo apt install pkg-config libssl-dev musl-tools
+rustup update
 rustup target add x86_64-unknown-linux-musl
 cargo build --release --target x86_64-unknown-linux-musl
 ```
