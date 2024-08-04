@@ -387,5 +387,8 @@ This work would not be possible if it were not for these related projects:
  - [axum](https://github.com/tokio-rs/axum)
  - [reqwest](https://github.com/seanmonstar/reqwest)
  - [hurl](https://github.com/Orange-OpenSource/hurl)
+ - [serde](https://github.com/serde-rs/serde)
+ - [clap](https://github.com/clap-rs/clap)
+ - [glob-match](https://github.com/devongovett/glob-match)
 
 A huge thank you to all the people who contributed to these projects.

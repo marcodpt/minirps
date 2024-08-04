@@ -23,6 +23,7 @@ use axum::{
 use axum_server::tls_openssl::OpenSSLConfig;
 use minijinja::{Environment, path_loader};
 use reqwest::{Request, RequestBuilder, Client};
+use glob_match::glob_match;
 
 #[derive(Deserialize, Clone, Debug)]
 struct Req {
@@ -50,6 +51,8 @@ struct Route {
 
 #[derive(Deserialize, Clone, Debug, Default)]
 struct Config {
+    all: Option<bool>,
+    ignore: Option<Vec<String>>,
     cors: Option<Vec<String>>,
     port: Option<u16>,
     cert: Option<PathBuf>,
@@ -60,31 +63,36 @@ struct Config {
 }
 
 fn build_assets (
-    all: bool, base: &Path, dir: &Path, mut app: Router<AppState>
+    all: bool,
+    ignore: &Vec<String>,
+    base: &Path,
+    dir: &Path,
+    mut app: Router<AppState>
 ) -> Result<Router<AppState>, Box<dyn Error>> {
     for entry in read_dir(dir)? {
         let entry = entry?;
         let path = entry.path();
-        let mut ignore = !all;
-        if ignore {
-            ignore = match path.file_name() {
-                Some(name) => name
-                    .to_str().unwrap_or("").as_bytes()[0] == b'.',
-                None => false
-            };
+        let route = match path.strip_prefix(&base) {
+            Ok(route) => Path::new("/").join(route),
+            Err(_) => path.clone()
+        };
+        let name = route.file_name().ok_or("unreachable")?
+            .to_str().ok_or("unreachable")?;
+        let root = route.parent().ok_or("unreachable")?
+            .to_str().ok_or("unreachable")?;
+        let route = route.to_str().ok_or("unreachable")?;
+
+        let mut hide = !all && name.as_bytes()[0] == b'.';
+        if !hide {
+            for glob in ignore {
+                if !hide {
+                    hide = glob_match(glob, route);
+                }
+            }
         }
-        if path.is_dir() && !ignore {
-            app = build_assets(all, base, &path, app)?;
-        } else if !ignore {
-            let route = match path.strip_prefix(&base) {
-                Ok(route) => Path::new("/").join(route),
-                Err(_) => path.clone()
-            };
-            let name = route.file_name().ok_or("unreachable")?
-                .to_str().ok_or("unreachable")?;
-            let root = route.parent().ok_or("unreachable")?
-                .to_str().ok_or("unreachable")?;
-            let route = route.to_str().ok_or("unreachable")?;
+        if path.is_dir() && !hide {
+            app = build_assets(all, ignore, base, &path, app)?;
+        } else if !hide {
             let mut headers = HeaderMap::new();
             match mime_guess::from_path(&path).first_raw() {
                 Some(value) => {
@@ -269,6 +277,10 @@ struct Cli {
     /// all files, include hidden files
     #[clap(short, long)]
     all: bool,
+
+    /// ignore files based on glob match
+    #[clap(short, long)]
+    ignore: Option<String>,
 }
 
 #[tokio::main]
@@ -281,6 +293,10 @@ async fn main() -> Result<(), Box<dyn Error>> {
         true => Some(Vec::new()),
         false => None
     };
+    let mut ignore: Vec<String> = Vec::new();
+    if let Some(glob) = cli.ignore {
+        ignore.push(glob);
+    }
     if let Some(p) = cli.config {
         let p = p.as_path();
         let data = read_to_string(p)?;
@@ -298,6 +314,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
         }
         if let Some(key) = config.key {
             config.key = Some(dir.join(key));
+        }
+        if let Some(mut globs) = config.ignore {
+            ignore.append(&mut globs);
         }
     }
 
@@ -370,7 +389,10 @@ async fn main() -> Result<(), Box<dyn Error>> {
     //println!("{:#?}", routes);
 
     if let Some(assets) = cli.assets.or(config.assets) {
-        app = build_assets(cli.all, &assets, &assets, app)?;
+        app = build_assets(
+            cli.all || config.all.unwrap_or(false),
+            &ignore, &assets, &assets, app
+        )?;
     }
 
     for route in &routes {
