@@ -3,7 +3,7 @@ Mini [reverse proxy](https://en.wikipedia.org/wiki/Reverse_proxy) server
 written in rust
 
 ## Features ❤️
- - very fast single binary with no dependencies
+ - very fast single standalone binary
  - static file server
  - [reverse proxy](https://en.wikipedia.org/wiki/Reverse_proxy) router
  - HTTPS
