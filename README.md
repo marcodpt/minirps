@@ -2,7 +2,7 @@
 Mini [reverse proxy](https://en.wikipedia.org/wiki/Reverse_proxy) server
 written in rust
 
-## Features ❤️
+## ❤️ Features
  - very fast single standalone binary
  - static file server
  - [reverse proxy](https://en.wikipedia.org/wiki/Reverse_proxy) router
@@ -11,16 +11,19 @@ written in rust
  - consume any API data and create custom responses with [minijinja](https://github.com/mitsuhiko/minijinja) templates
  - extensively tested with [hurl](https://github.com/Orange-OpenSource/hurl)
 
-## Motivation 💡
-The best way to build servers and adjust to dynamic market demands in my
-understanding is to apply the Linux philosophy to them.
+## 💡 Motivation
+This project is an attempt to adopt the Linux philosophy in building servers.
 
-Each server or microservice performs a specific and well-defined function.
+The combination of small servers focused on one task scales better and is
+easier to maintain.
 
-So I decided to write a microservice that I can quickly configure to serve
-files, and orchestrate other services.
+In the case of Linux, it was necessary to create the shell language and the
+pipe operator to give full power to this philosophy.
 
-## Install 💻
+`minirps` tries to fill this void by being a server focused on solving the
+specific problem of combining servers.
+
+## 💻 Install
 ```
 cargo install minirps
 ```
@@ -28,7 +31,7 @@ cargo install minirps
 Alternatively you can use one of the precompiled binaries available with each
 release (currently generic Linux only).
 
-## Usage 🎮
+## 🎮 Usage
 ```
 minirps -h
 ```
@@ -237,7 +240,7 @@ body = "{% include 'edit.html' %}"
 headers = { Content-Type = "text/html" }
 ```
 
-## Examples 🧪
+## 🧪 Examples
 
 ### static server with cors
 In this example, a static server was created and also a
@@ -275,7 +278,7 @@ minirps -f examples/test.toml
 hurl --test examples/test.hurl
 ```
 
-## Docs 📖
+## 📖 Docs
 ### config.toml
 Command line arguments take priority over config file if both are present.  
 
@@ -403,7 +406,7 @@ The data object is where all the results of the [reverse proxy](https://en.wikip
  - `body`: The response body as a string associated with the request.
  - `json`: The response body converted to json (or if it fails as json string) associated with the request.
 
-## Releases 📦
+## 📦 Releases
 Currently, only binaries for generic versions of Linux are distributed across
 releases.
 ```
@@ -414,22 +417,22 @@ cargo update
 cargo build --release --target x86_64-unknown-linux-musl
 ```
 
-## Microservices 💯
+## 💯 Microservices
 A list of microservices I use combined with `minirps` sharing yours philosophy.
  - [serialscale](https://github.com/marcodpt/serialscale): An IOT server
 written in rust for reading weighing data on scales via serial port.
  - [rawprinter](https://github.com/marcodpt/rawprinter): An IOT server written
 in rust for connecting via USB to raw printers.
 
-## Contributing 🤝
+## 🤝 Contributing
 It's a very simple project.
 Any contribution, any feedback is greatly appreciated.
 
-## Support ⭐
+## ⭐ Support
 If this project was useful to you, consider giving it a star on github, it's a
 way to increase evidence and attract more contributors.
 
-## Acknowledgment 🙏
+## 🙏 Acknowledgment
 This work would not be possible if it were not for these related projects:
  - [minijinja](https://github.com/mitsuhiko/minijinja)
  - [axum](https://github.com/tokio-rs/axum)
