@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta http-equiv="x-ua-compatible" content="ie=edge"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <link rel="stylesheet" href="https://unpkg.com/marx-css/css/marx.min.css">
+  <title>{% block title %}{% endblock title %} - MiniRPS</title>
+</head>
+<body>
+  <main>
+    <nav>
+      <a href="/">Home</a> |
+      <a href="/data.json">Raw Data</a> |
+      <a href="https://github.com/marcodpt/minirps">Github</a>
+    </nav>
+    {% block main %}{% endblock main %}
+  </main>
+  <footer>
+    <p>Mini RPS</p>
+  </footer>
+</body>
+</html>

@@ -1,0 +1,18 @@
+# minirps -f config.toml
+
+port = 3000
+assets = "assets"
+templates = "templates"
+
+[[routes]]
+method = "GET"
+path = "/"
+
+[[routes.requests]]
+name = "elements"
+method = "GET"
+url = "http://localhost:3000/data.json"
+
+[routes.response]
+body = "{% include 'table.html' %}"
+headers = { Content-Type = "text/html" }

@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}Periodic Table{% endblock title %}
+{% block main %}
+  <h1>Periodic Table</h1>
+  {% set rows = data.elements.json %}
+  <table>
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Symbol</th>
+        <th>Name</th>
+        <th>Configuration</th>
+        <th>Discovery</th>
+        <th>Discovered By</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in rows %}
+        <tr>
+          <td>{{row.AtomicNumber}}</td>
+          <td>{{row.Symbol}}</td>
+          <td>{{row.EnglishName}}</td>
+          <td>{{row.Configuration}}</td>
+          <td>{{row.Discovery}}</td>
+          <td>{{row.DiscoveredBy}}</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+{% endblock main %}
