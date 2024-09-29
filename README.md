@@ -2,7 +2,7 @@
 
 [![Version](https://img.shields.io/crates/v/minirps)](https://crates.io/crates/minirps)
 [![Downloads](https://img.shields.io/crates/d/minirps)](https://crates.io/crates/minirps)
-[![Size](https://img.shields.io/crates/size/minirps)](https://crates.io/crates/minirps)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://github.com/marcodpt/minirps/blob/main/LICENSE)
 
 Mini [reverse proxy](https://en.wikipedia.org/wiki/Reverse_proxy) server
 written in rust
