@@ -1,0 +1,12 @@
+# minirps -f config.toml
+
+port = 3001
+templates = "templates"
+
+[[routes]]
+method = "GET"
+path = "/"
+
+[routes.response]
+body = "{% include 'index.html' %}"
+headers = { Content-Type = "text/html" }

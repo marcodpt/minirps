@@ -1,5 +1,6 @@
 use std::default::Default;
 use std::error::Error;
+use std::str::from_utf8;
 use std::fs::{read, read_to_string, read_dir};
 use std::path::{Path, PathBuf};
 use std::collections::HashMap;
@@ -22,6 +23,7 @@ use axum_server::tls_openssl::OpenSSLConfig;
 use minijinja::{Environment, path_loader};
 use reqwest::{Request, RequestBuilder, Client};
 use glob_match::glob_match;
+use std::process::Command;
 
 #[derive(Deserialize, Clone, Debug)]
 struct Req {
@@ -286,6 +288,17 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let cli = Cli::parse();
 
     let mut env = Environment::new();
+    fn cmd(cmd: String) -> String {
+        let stdout = Command::new("sh")
+            .arg("-c")
+            .arg(&cmd)
+            .output()
+            .expect("failed to execute process")
+            .stdout;
+        let stdout = from_utf8(&stdout).expect("failed to parse output");
+        stdout.to_string()
+    }
+    env.add_function("cmd", cmd);
     let mut config: Config = Default::default();
     let cors: Option<Vec<String>> = match cli.allow_cors {
         true => Some(Vec::new()),
