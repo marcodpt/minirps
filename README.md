@@ -1,4 +1,9 @@
 # ![](assets/favicon.ico)  Mini RPS
+
+[![Version](https://img.shields.io/crates/v/minirps)](https://crates.io/crates/minirps)
+[![Downloads](https://img.shields.io/crates/d/minirps)](https://crates.io/crates/minirps)
+[![Size](https://img.shields.io/crates/size/minirps)](https://crates.io/crates/minirps)
+
 Mini [reverse proxy](https://en.wikipedia.org/wiki/Reverse_proxy) server
 written in rust
 
@@ -10,18 +15,6 @@ written in rust
  - [CORS](https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS)
  - consume any API data and create custom responses with [minijinja](https://github.com/mitsuhiko/minijinja) templates
  - extensively tested with [hurl](https://github.com/Orange-OpenSource/hurl)
-
-## 💡 Motivation
-This project is an attempt to adopt the Linux philosophy in building servers.
-
-The combination of small servers focused on one task scales better and is
-easier to maintain.
-
-In the case of Linux, it was necessary to create the shell language and the
-pipe operator to give full power to this philosophy.
-
-`minirps` tries to fill this void by being a server focused on solving the
-specific problem of combining servers.
 
 ## 💻 Install
 ```
@@ -242,6 +235,13 @@ headers = { Content-Type = "text/html" }
 
 ## 🧪 Examples
 
+### Periodic Table
+In this example, a periodic table was created using local data.
+
+```
+minirps -f examples/periodic_table/config.toml
+```
+
 ### static server with cors
 In this example, a static server was created and also a
 [CORS](https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS)
@@ -443,3 +443,15 @@ This work would not be possible if it were not for these related projects:
  - [glob-match](https://github.com/devongovett/glob-match)
 
 A huge thank you to all the people who contributed to these projects.
+
+## 💡 Motivation
+This project is an attempt to adopt the Linux philosophy in building servers.
+
+The combination of small servers focused on one task scales better and is
+easier to maintain.
+
+In the case of Linux, it was necessary to create the shell language and the
+pipe operator to give full power to this philosophy.
+
+`minirps` tries to fill this void by being a server focused on solving the
+specific problem of combining servers.
