@@ -16,3 +16,16 @@ url = "http://localhost:3000/data.json"
 [routes.response]
 body = "{% include 'table.html' %}"
 headers = { Content-Type = "text/html" }
+
+[[routes]]
+method = "GET"
+path = "/:element"
+
+[[routes.requests]]
+name = "elements"
+method = "GET"
+url = "http://localhost:3000/data.json"
+
+[routes.response]
+body = "{% include 'element.html' %}"
+headers = { Content-Type = "text/html" }

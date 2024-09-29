@@ -4,25 +4,20 @@
   <h1>Periodic Table</h1>
   {% set rows = data.elements.json %}
   <table>
-    <thead>
-      <tr>
-        <th>#</th>
-        <th>Symbol</th>
-        <th>Name</th>
-        <th>Configuration</th>
-        <th>Discovery</th>
-        <th>Discovered By</th>
-      </tr>
-    </thead>
     <tbody>
-      {% for row in rows %}
+      {% for period in range(0, rows | map(attribute="Period")| max) %}
         <tr>
-          <td>{{row.AtomicNumber}}</td>
-          <td>{{row.Symbol}}</td>
-          <td>{{row.EnglishName}}</td>
-          <td>{{row.Configuration}}</td>
-          <td>{{row.Discovery}}</td>
-          <td>{{row.DiscoveredBy}}</td>
+          {% for group in range(0,
+            rows | map(attribute="Group")| max
+          ) %}
+            <td>
+              {% for row in rows %}
+                {% if row.Group == group + 1 and row.Period == period + 1 %}
+                  <a href="{{row.Symbol}}">{{row.Symbol}}</a>
+                {% endif %}
+              {% endfor %}
+            </td>
+          {% endfor %}
         </tr>
       {% endfor %}
     </tbody>
