@@ -235,11 +235,27 @@ headers = { Content-Type = "text/html" }
 
 ## 🧪 Examples
 
+### Command Line
+In this example we show the use of the command line through a
+[minijinja](https://github.com/mitsuhiko/minijinja) custom function.
+
+```
+minirps -f examples/command\_line/config.toml
+```
+
 ### Periodic Table
 In this example, a periodic table was created using local data.
 
 ```
-minirps -f examples/periodic_table/config.toml
+minirps -f examples/periodic\_table/config.toml
+```
+
+### Star Wars API
+In this example [minijinja](https://github.com/mitsuhiko/minijinja) templates
+were used to consume data from [swapi's](https://swapi.dev/) Star Wars API.
+
+```
+minirps -f examples/starwars/config.toml
 ```
 
 ### static server with cors
@@ -254,15 +270,7 @@ minirps assets
 
 [CORS](https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS) server
 ```
-minirps assets/tests -o -p 4000 -c assets/certs/cert.txt -k assets/certs/key.txt
-```
-
-### starwars
-In this example [minijinja](https://github.com/mitsuhiko/minijinja) templates
-were used to consume data from [swapi's](https://swapi.dev/) Star Wars API.
-
-```
-minirps -f examples/starwars.toml
+minirps assets -o -p 4000 -c assets/certs/cert.txt -k assets/certs/key.txt
 ```
 
 ### test

@@ -1,6 +1,6 @@
 # minirps -f config.toml
 
-port = 3000
+port = 3002
 assets = "assets"
 templates = "templates"
 

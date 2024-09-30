@@ -1,4 +1,5 @@
-templates = "../templates"
+templates = "templates"
+port = 3003
 
 [[routes]]
 method = "GET"
