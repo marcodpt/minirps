@@ -1,6 +1,6 @@
 port = 4000
-assets = "../assets"
-templates = "../templates"
+assets = "assets"
+templates = "templates"
 
 ## blank route
 [[routes]]

@@ -1,4 +1,4 @@
-# ![](assets/favicon.ico)  Mini RPS
+# ![](favicon.ico)  Mini RPS
 
 [![Version](https://img.shields.io/crates/v/minirps)](https://crates.io/crates/minirps)
 [![Downloads](https://img.shields.io/crates/d/minirps)](https://crates.io/crates/minirps)
@@ -240,14 +240,14 @@ In this example we show the use of the command line through a
 [minijinja](https://github.com/mitsuhiko/minijinja) custom function.
 
 ```
-minirps -f examples/command\_line/config.toml
+minirps -f examples/command_line/config.toml
 ```
 
 ### Periodic Table
 In this example, a periodic table was created using local data.
 
 ```
-minirps -f examples/periodic\_table/config.toml
+minirps -f examples/periodic_table/config.toml
 ```
 
 ### Star Wars API
@@ -265,12 +265,14 @@ request as a showcase.
 
 Static server
 ```
-minirps assets
+minirps examples/tests/assets
 ```
 
 [CORS](https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS) server
 ```
-minirps assets -o -p 4000 -c assets/certs/cert.txt -k assets/certs/key.txt
+minirps examples/tests/assets -o -p 4000 \
+  -c examples/tests/assets/certs/cert.txt \
+  -k examples/tests/assets/certs/key.txt
 ```
 
 ### test
@@ -279,11 +281,11 @@ reverse proxy and templates automatically using
 [hurl](https://github.com/Orange-OpenSource/hurl).
 
 ```
-minirps -f examples/test.toml
+minirps -f examples/tests/config.toml
 ```
 
 ```
-hurl --test examples/test.hurl
+hurl --test examples/tests/test.hurl
 ```
 
 ## 📖 Docs

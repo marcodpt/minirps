@@ -1,5 +1,6 @@
-templates = "templates"
 port = 3003
+templates = "templates"
+assets = "assets"
 
 [[routes]]
 method = "GET"
