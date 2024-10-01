@@ -8,13 +8,15 @@ Mini [reverse proxy](https://en.wikipedia.org/wiki/Reverse_proxy) server
 written in rust
 
 ## ❤️ Features
- - very fast single standalone binary
- - static file server
- - [reverse proxy](https://en.wikipedia.org/wiki/Reverse_proxy) router
+ - Very fast single standalone binary.
+ - Static file server
+ - [Reverse proxy](https://en.wikipedia.org/wiki/Reverse_proxy) router
  - HTTPS
  - [CORS](https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS)
- - consume any API data and create custom responses with [minijinja](https://github.com/mitsuhiko/minijinja) templates
- - extensively tested with [hurl](https://github.com/Orange-OpenSource/hurl)
+ - Consume any API data and create custom responses with [minijinja](https://github.com/mitsuhiko/minijinja) templates
+ - Extensively tested with [hurl](https://github.com/Orange-OpenSource/hurl)
+ - Designed following the principles of
+[UNIX philosophy](https://en.wikipedia.org/wiki/Unix_philosophy).
 
 ## 💻 Install
 ```
@@ -233,7 +235,7 @@ body = "{% include 'edit.html' %}"
 headers = { Content-Type = "text/html" }
 ```
 
-## 🧪 Examples
+## 💯 Examples
 
 ### Command Line
 In this example we show the use of the command line through a
@@ -436,12 +438,34 @@ cargo update
 cargo build --release --target x86_64-unknown-linux-musl
 ```
 
-## 💯 Microservices
-A list of microservices I use combined with `minirps` sharing yours philosophy.
+## 💡 Microservices
+A list of microservices I use combined with `minirps`:
  - [serialscale](https://github.com/marcodpt/serialscale): An IOT server
 written in rust for reading weighing data on scales via serial port.
  - [rawprinter](https://github.com/marcodpt/rawprinter): An IOT server written
 in rust for connecting via USB to raw printers.
+
+## 📢 Motivation
+There are already several static page servers.
+
+However, what sets `minirps` apart is its high flexibility.
+
+In addition to delivering the basics well: static pages, `HTTPS`, `CORS`.
+
+Adding [minijinja](https://github.com/mitsuhiko/minijinja) as a template
+language and request logic allows you to create a powerful reverse proxy.
+
+What [php](https://www.php.net/) is to [apache](https://httpd.apache.org/),
+[minijinja](https://github.com/mitsuhiko/minijinja) is to `minirps`, with the
+difference of being a single binary with a simple configuration that also
+accepts its syntax.
+
+My experience building backends has taught me that small servers that connect
+together produce better results in the long run due to their flexibility and
+ease of maintenance.
+
+`Minirps` tries to be a small server that connects others servers, following
+the spirit of [UNIX philosophy](https://en.wikipedia.org/wiki/Unix_philosophy).
 
 ## 🤝 Contributing
 It's a very simple project.
@@ -462,15 +486,3 @@ This work would not be possible if it were not for these related projects:
  - [glob-match](https://github.com/devongovett/glob-match)
 
 A huge thank you to all the people who contributed to these projects.
-
-## 💡 Motivation
-This project is an attempt to adopt the Linux philosophy in building servers.
-
-The combination of small servers focused on one task scales better and is
-easier to maintain.
-
-In the case of Linux, it was necessary to create the shell language and the
-pipe operator to give full power to this philosophy.
-
-`minirps` tries to fill this void by being a server focused on solving the
-specific problem of combining servers.
