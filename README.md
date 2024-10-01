@@ -258,7 +258,18 @@ were used to consume data from [swapi's](https://swapi.dev/) Star Wars API.
 minirps -f examples/starwars/config.toml
 ```
 
-### static server with cors
+With https (self-signed certificate, needs to accept security risk in the
+browser.)
+
+```
+minirps -f examples/starwars/config.toml \
+  -k examples/certs/key.txt \
+  -c examples/certs/cert.txt
+```
+
+In any example it is possible to add https.
+
+### Static Server with CORS
 In this example, a static server was created and also a
 [CORS](https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS)
 request as a showcase.
@@ -270,9 +281,7 @@ minirps examples/tests/assets
 
 [CORS](https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS) server
 ```
-minirps examples/tests/assets -o -p 4000 \
-  -c examples/tests/assets/certs/cert.txt \
-  -k examples/tests/assets/certs/key.txt
+minirps examples/tests/assets -o -p 4000
 ```
 
 ### test

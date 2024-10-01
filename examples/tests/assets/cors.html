@@ -9,14 +9,14 @@
   </head>
   <body>
     <main>
-      <h1>CORS test => fetch https://localhost:4000/data.json</h1>
+      <h1>CORS test => fetch http://localhost:4000/data.json</h1>
       <code>
-        minirps assets -o -p 4000 -c assets/certs/cert.txt -k assets/certs/key.txt
+        minirps examples/tests/assets -o -p 4000
       </code>
       <p style="white-space:pre-wrap"></p>
     </main>
     <script>
-      fetch('https://localhost:4000/tests/data.json')
+      fetch('http://localhost:4000/tests/data.json')
         .then(response => response.text())
         .then(data => document.body
           .querySelector('p')
