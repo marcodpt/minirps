@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta http-equiv="x-ua-compatible" content="ie=edge"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>{% block title %}{% endblock title %} - MiniRPS</title>
+</head>
+<body>
+  <main>
+    <nav>
+      <a href="/">About</a> |
+      <a href="/branches">Branches</a> |
+      <a href="/diffs">Diffs</a> |
+      <a href="/refs">Refs</a> |
+      <a href="/commits">Commits</a> |
+      <a href="/tags">Tags</a> |
+      <a href="https://github.com/marcodpt/minirps">Github</a>
+    </nav>
+  </main>
+  {% block content %}{% endblock content %}
+</body>
+</html>

@@ -1,0 +1,6 @@
+{% extends "base.html" %}
+{% block title %}{{params.table}}{% endblock title %}
+{% block content %}
+  <h1>{{params.table}}</h1>
+  <pre>{{cmd('gitql -q "select * from ' ~ params.table ~'"')}}</pre>
+{% endblock content %}

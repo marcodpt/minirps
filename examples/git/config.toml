@@ -1,0 +1,24 @@
+port = 3004
+templates = "templates"
+assets = "assets"
+
+[[routes]]
+method = "GET"
+path = "/"
+
+[routes.response]
+body = "{% include 'home.html' %}"
+
+[routes.response.headers]
+Content-Type = "text/html"
+
+
+[[routes]]
+method = "GET"
+path = "/:table"
+
+[routes.response]
+body = "{% include 'table.html' %}"
+
+[routes.response.headers]
+Content-Type = "text/html"
