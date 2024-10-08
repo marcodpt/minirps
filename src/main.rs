@@ -1,32 +1,31 @@
 //mod templates;
-//mod assets;
+mod assets;
 
 use std::default::Default;
 use std::error::Error;
 use std::str::from_utf8;
-use std::fs::{read, read_to_string, read_dir};
-use std::path::{Path, PathBuf};
+use std::fs::read_to_string;
+use std::path::PathBuf;
 use std::collections::HashMap;
 use std::net::SocketAddr;
 use serde_derive::Deserialize;
 use serde_json::{Value, json};
 use clap::{Parser};
 use toml;
-use mime_guess;
 use tower_http::cors::{Any, CorsLayer};
 use axum::{
     response::{IntoResponse, Response},
     extract::{OriginalUri, Path as Params, Query, State, MatchedPath},
     routing::{get, on, Router},
     http::{StatusCode, Method, header::{
-        HeaderMap, HeaderName, HeaderValue, CONTENT_TYPE
+        HeaderMap, HeaderName, HeaderValue
     }}
 };
 use axum_server::tls_openssl::OpenSSLConfig;
 use minijinja::{Environment, path_loader};
 use reqwest::{Request, RequestBuilder, Client};
-use glob_match::glob_match;
 use std::process::Command;
+use crate::assets::Assets;
 
 #[derive(Deserialize, Clone, Debug)]
 struct Req {
@@ -65,56 +64,6 @@ struct Config {
     routes: Option<Vec<Route>>
 }
 
-fn build_assets (
-    all: bool,
-    ignore: &Vec<String>,
-    base: &Path,
-    dir: &Path,
-    mut app: Router<AppState>
-) -> Result<Router<AppState>, Box<dyn Error>> {
-    for entry in read_dir(dir)? {
-        let entry = entry?;
-        let path = entry.path();
-        let route = match path.strip_prefix(&base) {
-            Ok(route) => Path::new("/").join(route),
-            Err(_) => path.clone()
-        };
-        let name = route.file_name().ok_or("unreachable")?
-            .to_str().ok_or("unreachable")?;
-        let root = route.parent().ok_or("unreachable")?
-            .to_str().ok_or("unreachable")?;
-        let route = route.to_str().ok_or("unreachable")?;
-
-        let mut hide = !all && name.as_bytes()[0] == b'.';
-        if !hide {
-            for glob in ignore {
-                if !hide {
-                    hide = glob_match(glob, route);
-                }
-            }
-        }
-        if path.is_dir() && !hide {
-            app = build_assets(all, ignore, base, &path, app)?;
-        } else if !hide {
-            let mut headers = HeaderMap::new();
-            match mime_guess::from_path(&path).first_raw() {
-                Some(value) => {
-                    headers.insert(CONTENT_TYPE, value.parse()?);
-                },
-                None => {}
-            };
-            let body = read(&path)?;
-
-            if name == "index.html" {
-                app = app.route(root, get((headers.clone(), body.clone())));
-            }
-
-            app = app.route(route, get((headers, body)));
-        }
-    }
-    Ok(app)
-}
-
 struct AppError(Box<dyn Error>);
 
 impl IntoResponse for AppError {
@@ -133,7 +82,15 @@ type Env = Environment<'static>;
 #[derive(Clone)]
 struct AppState {
     routes: Vec<Route>,
-    env: Env
+    env: Env,
+    loader: Option<Assets>
+}
+
+async fn file_loader (
+    state: State<AppState>,
+    Params(params): Params<HashMap<String, String>>,
+) -> Response {
+    state.loader.as_ref().unwrap().get(params.get("file").map_or("", |v| v))
 }
 
 async fn handler (
@@ -402,11 +359,15 @@ async fn main() -> Result<(), Box<dyn Error>> {
     }
     //println!("{:#?}", routes);
 
+    let mut loader: Option<Assets> = None;
     if let Some(assets) = cli.assets.or(config.assets) {
-        app = build_assets(
+        loader = Some(Assets::new(
+            assets,
             cli.all || config.all.unwrap_or(false),
-            &ignore, &assets, &assets, app
-        )?;
+            ignore
+        )?);
+        app = app.route("/", get(file_loader));
+        app = app.route("/*file", get(file_loader));
     }
 
     for route in &routes {
@@ -431,8 +392,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
     }
 
     let state = AppState {
-        routes: routes,
-        env: env,
+        routes,
+        env,
+        loader
     };
     let app = app.with_state(state);
 

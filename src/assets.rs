@@ -10,6 +10,7 @@ use axum::{
 use glob_match::glob_match;
 use mime_guess;
 
+#[derive(Clone)]
 pub struct Assets {
     all: bool,
     ignore: Vec<String>,
@@ -34,7 +35,8 @@ impl Assets {
         }
     }
 
-    pub fn get (&self, path: &Path) -> Response<Body> {
+    pub fn get (&self, path: &str) -> Response<Body> {
+        let path = Path::new(path);
         let dir = self.dir.as_path();
         let mut file = dir.join(path);
         let mut response: Response<Body> = Response::default();
