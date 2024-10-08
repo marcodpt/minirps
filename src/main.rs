@@ -1,3 +1,5 @@
+//mod templates;
+
 use std::default::Default;
 use std::error::Error;
 use std::str::from_utf8;
