@@ -1,4 +1,5 @@
 //mod templates;
+//mod assets;
 
 use std::default::Default;
 use std::error::Error;
