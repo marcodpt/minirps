@@ -1,7 +1,8 @@
+mod addons;
+
 use std::path::{PathBuf};
 use minijinja::{Error, Environment, path_loader, value::Value};
-use std::str::from_utf8;
-use std::process::Command;
+use addons::addons;
 
 type Env = Environment<'static>;
 pub struct Engine {
@@ -13,17 +14,7 @@ impl Engine {
         let mut env = Environment::new();
         env.set_loader(path_loader(dir));
 
-        fn cmd(cmd: String) -> String {
-            let stdout = Command::new("sh")
-                .arg("-c")
-                .arg(&cmd)
-                .output()
-                .expect("failed to execute process")
-                .stdout;
-            let stdout = from_utf8(&stdout).expect("failed to parse output");
-            stdout.to_string()
-        }
-        env.add_function("cmd", cmd);
+        addons(&mut env);
 
         Ok(Engine {
             env

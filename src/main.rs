@@ -1,4 +1,4 @@
-//mod templates;
+mod templates;
 mod assets;
 
 use std::default::Default;
@@ -102,7 +102,7 @@ async fn handler (
     path: MatchedPath,
     headers: HeaderMap,
     method: Method,
-    body: String,
+    body: String
 ) -> Result<(StatusCode, HeaderMap, String), AppError> {
     let routes = &state.routes;
     let env = &state.env;
