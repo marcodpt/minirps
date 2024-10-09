@@ -20,8 +20,8 @@ struct Output {
     stderr: String
 }
 
-pub fn cmd(cmd: String) -> Result<Value, Error> {
-    let result = match Command::new("sh").arg("-c").arg(&cmd).output() {
+pub fn command(command: String) -> Result<Value, Error> {
+    let result = match Command::new("sh").arg("-c").arg(&command).output() {
         Ok(result) => result,
         Err(err) => {
             return Err(Error::new(
