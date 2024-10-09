@@ -19,7 +19,8 @@ use axum::{
     routing::{get, on, Router},
     http::{StatusCode, Method, header::{
         HeaderMap, HeaderName, HeaderValue
-    }}
+    }},
+    body::Body
 };
 use axum_server::tls_openssl::OpenSSLConfig;
 use minijinja::{Environment, path_loader};
@@ -89,7 +90,7 @@ struct AppState {
 async fn file_loader (
     state: State<AppState>,
     Params(params): Params<HashMap<String, String>>,
-) -> Response {
+) -> Result<Response<Body>, StatusCode> {
     state.loader.as_ref().unwrap().get(params.get("file").map_or("", |v| v))
 }
 
