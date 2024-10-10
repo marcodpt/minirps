@@ -1,7 +1,6 @@
 use minijinja::{Error, ErrorKind::InvalidOperation, Value};
 use reqwest::{Method, Url};
 use reqwest::blocking::Client;
-use crate::templates::addons::parse;
 
 fn fetch (
     method: &str,
@@ -36,7 +35,7 @@ fn fetch (
         Ok(response) => {
             if response.status().is_success() {
                 match response.text() {
-                    Ok(text) => parse(&text, None),
+                    Ok(text) => Ok(text.into()),
                     Err(err) => Err(Error::new(
                         InvalidOperation,
                         format!(
