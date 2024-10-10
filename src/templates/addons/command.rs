@@ -20,7 +20,10 @@ struct Output {
     stderr: String
 }
 
-pub fn command(command: String) -> Result<Value, Error> {
+pub fn command(
+    command: String,
+    full: Option<bool>
+) -> Result<Value, Error> {
     let result = match Command::new("sh").arg("-c").arg(&command).output() {
         Ok(result) => result,
         Err(err) => {
@@ -31,9 +34,13 @@ pub fn command(command: String) -> Result<Value, Error> {
         }
     };
 
-    Ok(Value::from_serialize(Output {
-        code: result.status.code(),
-        stdout: parser(&result.stdout)?,
-        stderr: parser(&result.stderr)?
-    }))
+    if full.unwrap_or(false) {
+        Ok(Value::from_serialize(Output {
+            code: result.status.code(),
+            stdout: parser(&result.stdout)?,
+            stderr: parser(&result.stderr)?
+        }))
+    } else {
+        Ok(parser(&result.stdout)?.into())
+    }
 }
