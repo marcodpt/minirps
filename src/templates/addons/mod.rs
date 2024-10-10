@@ -1,11 +1,20 @@
 mod command;
 mod parse;
+mod fetch;
 
 use minijinja::Environment;
 use command::command;
 use parse::parse;
+use fetch::{get, delete, head, options, post, put, patch};
 
 pub fn addons (env: &mut Environment) {
     env.add_filter("parse", parse);
     env.add_function("command", command);
+    env.add_function("get", get);
+    env.add_function("delete", delete);
+    env.add_function("head", head);
+    env.add_function("options", options);
+    env.add_function("post", post);
+    env.add_function("put", put);
+    env.add_function("patch", patch);
 }

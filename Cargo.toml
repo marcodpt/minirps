@@ -30,7 +30,7 @@ serde_derive = "1"
 serde_json = "1"
 mime_guess = "2"
 minijinja = { version = "2", features = ["loader"] }
-reqwest = "0"
+reqwest = { version = "0", features = ["json", "blocking"] }
 glob-match = "0"
 
 [profile.release]
