@@ -1,6 +1,7 @@
 use minijinja::{Error, ErrorKind::InvalidOperation, Value};
-use reqwest::{Method, Url, header};
+use reqwest::{Method, Url};
 use reqwest::blocking::Client;
+use crate::templates::addons::parse;
 
 fn fetch (
     method: &str,
@@ -34,37 +35,15 @@ fn fetch (
     match request.send() {
         Ok(response) => {
             if response.status().is_success() {
-                let content = response.headers().get(header::CONTENT_TYPE);
-
-                let is_json = if let Some(content) = content {
-                    let v = b"application/json;";
-                    let l = v.len();
-                    let c = content.as_bytes();
-                    *c == v[0..(l - 1)] || c[0..l] == *v
-                } else {false};
-
-                if is_json {
-                    match response.json::<Value>() {
-                        Ok(json) => Ok(json),
-                        Err(err) => Err(Error::new(
-                            InvalidOperation,
-                            format!(
-                                "Fail to parse response json!\n{}\n{:#}",
-                                info, err
-                            )
-                        ))
-                    }
-                } else {
-                    match response.text() {
-                        Ok(text) => Ok(text.into()),
-                        Err(err) => Err(Error::new(
-                            InvalidOperation,
-                            format!(
-                                "Fail to parse response text!\n{}\n{:#}",
-                                info, err
-                            )
-                        ))
-                    }
+                match response.text() {
+                    Ok(text) => parse(&text, None),
+                    Err(err) => Err(Error::new(
+                        InvalidOperation,
+                        format!(
+                            "Fail to parse response text!\n{}\n{:#}",
+                            info, err
+                        )
+                    ))
                 }
             } else {
                 Ok(response.status().as_u16().into())
