@@ -6,13 +6,15 @@ mod fetch;
 use minijinja::Environment;
 use parse::parse;
 use command::command;
-use file::{read};
+use file::{read, write, remove};
 use fetch::{get, delete, head, options, post, put, patch};
 
 pub fn addons (env: &mut Environment) {
     env.add_filter("parse", parse);
     env.add_function("command", command);
     env.add_function("read", read);
+    env.add_function("write", write);
+    env.add_function("remove", remove);
     env.add_function("get", get);
     env.add_function("delete", delete);
     env.add_function("head", head);
