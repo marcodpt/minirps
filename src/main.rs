@@ -8,6 +8,7 @@ use std::path::PathBuf;
 use std::collections::HashMap;
 use std::net::SocketAddr;
 use serde_json::{Value, json};
+use serde_derive::Serialize;
 use clap::{Parser};
 use tower_http::cors::{Any, CorsLayer};
 use axum::{
@@ -22,7 +23,6 @@ use axum::{
 use axum_server::tls_openssl::OpenSSLConfig;
 use minijinja::{Environment, path_loader};
 use reqwest::{Request, RequestBuilder, Client};
-use std::process::Command;
 use crate::assets::Assets;
 use crate::config::{Config, Route};
 
@@ -55,13 +55,18 @@ async fn file_loader (
     state.loader.as_ref().unwrap().get(params.get("file").map_or("", |v| v))
 }
 
+#[derive(Serialize)]
 struct Context {
     method: String,
     url: String,
+    route: String,
     path: String,
     query: String,
     params: Value,
     vars: Value,
+    headers: HashMap<String, String>,
+    body: String,
+    json: Value
 }
 
 async fn handler (
@@ -70,42 +75,50 @@ async fn handler (
     Params(params): Params<Value>,
     Query(vars): Query<Value>,
     route: MatchedPath,
-    headers: HeaderMap,
+    header_map: HeaderMap,
     method: Method,
     body: String
 ) -> Result<String, AppError> {
     let routes = &state.routes;
     let env = &state.env;
-    let mut context = json!({}); 
-    let x = context.as_object_mut().ok_or("unreachable")?;
-    x.insert(String::from("path"), Value::from(url.path()));
-    x.insert(String::from("query"), Value::from(url.query()));
-    x.insert(String::from("headers"), json!({}));
-    let h = x.get_mut("headers").ok_or("unreachable")?
-        .as_object_mut().ok_or("unreachable")?;
-    for key in headers.keys() {
-        let v = headers.get(key).ok_or("unreachable")?.to_str()?;
-        h.insert(key.to_string(), Value::from(v));
-    }
-    x.insert(String::from("params"), params);
-    x.insert(String::from("vars"), vars);
-    x.insert(String::from("body"), Value::from(body.clone()));
-    x.insert(String::from("json"), match serde_json::from_str(&body) {
-        Ok(data) => data,
-        Err(_) => Value::from(body)
-    });
+    let route = route.as_str();
 
     let mut matched: Option<Route> = None;
     for test in routes {
         if
             matched.is_none() &&
             &test.method == method.as_str() &&
-            &test.path == route.as_str()
+            &test.path == route
         {
             matched = Some(test.clone());
         }
     }
     let matched = matched.ok_or("no route matched!")?;
+
+    let mut headers: HashMap<String, String> = HashMap::new();
+    for key in header_map.keys() {
+        if let Some(value) = header_map.get(key) {
+            if let Ok(value) = value.to_str() {
+                headers.insert(key.to_string(), value.to_string());
+            }
+        }
+    }
+
+    let context = Context {
+        method: method.to_string(),
+        url: url.to_string(),
+        route: route.to_string(),
+        path: url.path().to_string(),
+        query: url.query().unwrap_or("").to_string(),
+        params,
+        vars,
+        headers,
+        body: body.clone(),
+        json: match serde_json::from_str(&body) {
+            Ok(data) => data,
+            Err(_) => Value::from(body)
+        }
+    };
 
     Ok(env.get_template(&matched.template)?.render(&context)?.parse()?)
 }
