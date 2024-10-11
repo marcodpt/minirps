@@ -3,12 +3,11 @@ mod assets;
 mod config;
 
 use std::error::Error;
-use std::str::from_utf8;
 use std::path::PathBuf;
 use std::collections::HashMap;
 use std::net::SocketAddr;
-use serde_json::{Value, json};
-use serde_derive::Serialize;
+use serde_json::{from_value, json};
+use serde_derive::{Serialize, Deserialize};
 use clap::{Parser};
 use tower_http::cors::{Any, CorsLayer};
 use axum::{
@@ -16,12 +15,12 @@ use axum::{
     extract::{OriginalUri, Path as Params, Query, State, MatchedPath},
     routing::{get, on, Router},
     http::{StatusCode, Method, header::{
-        HeaderMap, HeaderName, HeaderValue
+        HeaderMap, HeaderValue
     }},
     body::Body
 };
 use axum_server::tls_openssl::OpenSSLConfig;
-use minijinja::{Environment, path_loader};
+use minijinja::{Environment, path_loader, Value};
 use reqwest::{Request, RequestBuilder, Client};
 use crate::assets::Assets;
 use crate::config::{Config, Route};
@@ -65,8 +64,15 @@ struct Context {
     params: Value,
     vars: Value,
     headers: HashMap<String, String>,
-    body: String,
-    json: Value
+    body: String
+}
+
+#[derive(Deserialize)]
+struct Redirect {
+    method: Option<String>,
+    url: String,
+    headers: Option<HashMap<String, String>>,
+    body: Option<String>
 }
 
 async fn handler (
@@ -78,16 +84,17 @@ async fn handler (
     header_map: HeaderMap,
     method: Method,
     body: String
-) -> Result<String, AppError> {
+) -> Result<Response, AppError> {
     let routes = &state.routes;
     let env = &state.env;
     let route = route.as_str();
+    let method = method.as_str();
 
     let mut matched: Option<Route> = None;
     for test in routes {
         if
             matched.is_none() &&
-            &test.method == method.as_str() &&
+            &test.method == method &&
             &test.path == route
         {
             matched = Some(test.clone());
@@ -113,14 +120,57 @@ async fn handler (
         params,
         vars,
         headers,
-        body: body.clone(),
-        json: match serde_json::from_str(&body) {
-            Ok(data) => data,
-            Err(_) => Value::from(body)
-        }
+        body: body.clone()
     };
 
-    Ok(env.get_template(&matched.template)?.render(&context)?.parse()?)
+    let tpl = env.get_template(&matched.template)?;
+    let (body, state) = tpl.render_and_return_state(&context)?;
+
+    if let Some(redirect) = state.lookup("redirect") {
+        let redirect: Redirect = from_value(json!(redirect))?;
+        let method = redirect.method.unwrap_or(method.to_string());
+
+        let mut r = RequestBuilder::from_parts(Client::new(),
+            Request::new(method.parse()?, redirect.url.parse()?)
+        );
+        for (key, value) in header_map.iter() {
+            r = r.header(key, value);
+        }
+        if let Some(headers) = redirect.headers {
+            for (key, value) in headers.iter() {
+                r = r.header(key, value);
+            }
+        }
+        let res = r.body(redirect.body.unwrap_or(body)).send().await?;
+
+        let mut response = Response::builder()
+            .status(res.status());
+
+        for (key, value) in res.headers().iter() {
+            response = response.header(key, value);
+        }
+
+        return Ok(response.body(res.bytes().await?.into())?);
+    }
+
+    let mut response = Response::builder()
+        .status(200)
+        .header("content-type", "text/html");
+
+    if let Some(status) = state.lookup("status") {
+        if let Ok(status) = u16::try_from(status) {
+            response = response.status(status);
+        }
+    }
+
+    if let Some(headers) = state.lookup("headers") {
+        let headers: HashMap<String, String> = from_value(json!(headers))?;
+        for (key, value) in headers.iter() {
+            response = response.header(key, value);
+        }
+    }
+
+    Ok(response.body(body.into())?)
 }
 
 #[derive(Parser)]
