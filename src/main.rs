@@ -1,17 +1,14 @@
 mod templates;
 mod assets;
+mod config;
 
-use std::default::Default;
 use std::error::Error;
 use std::str::from_utf8;
-use std::fs::read_to_string;
 use std::path::PathBuf;
 use std::collections::HashMap;
 use std::net::SocketAddr;
-use serde_derive::Deserialize;
 use serde_json::{Value, json};
 use clap::{Parser};
-use toml;
 use tower_http::cors::{Any, CorsLayer};
 use axum::{
     response::{IntoResponse, Response},
@@ -27,43 +24,7 @@ use minijinja::{Environment, path_loader};
 use reqwest::{Request, RequestBuilder, Client};
 use std::process::Command;
 use crate::assets::Assets;
-
-#[derive(Deserialize, Clone, Debug)]
-struct Req {
-    name: Option<String>,
-    method: String,
-    headers: Option<HashMap<String, String>>,
-    url: String,
-    body: Option<String>
-}
-
-#[derive(Deserialize, Clone, Debug)]
-struct Res {
-    status: Option<String>,
-    headers: Option<HashMap<String, String>>,
-    body: Option<String>
-}
-
-#[derive(Deserialize, Clone, Debug)]
-struct Route {
-    method: String,
-    path: String,
-    requests: Option<Vec<Req>>,
-    response: Option<Res>
-}
-
-#[derive(Deserialize, Clone, Debug, Default)]
-struct Config {
-    all: Option<bool>,
-    ignore: Option<Vec<String>>,
-    cors: Option<Vec<String>>,
-    port: Option<u16>,
-    cert: Option<PathBuf>,
-    key: Option<PathBuf>,
-    assets: Option<PathBuf>, 
-    templates: Option<PathBuf>, 
-    routes: Option<Vec<Route>>
-}
+use crate::config::{Config, Route, Req, Res};
 
 struct AppError(Box<dyn Error>);
 
@@ -260,35 +221,20 @@ async fn main() -> Result<(), Box<dyn Error>> {
         stdout.to_string()
     }
     env.add_function("cmd", cmd);
-    let mut config: Config = Default::default();
+    let config = Config::new(cli.config.as_deref())?;
+
     let cors: Option<Vec<String>> = match cli.allow_cors {
         true => Some(Vec::new()),
         false => None
     };
     let mut ignore: Vec<String> = Vec::new();
+    if let Some(templates) = config.templates {
+        env.set_loader(path_loader(templates));
+    }
     if let Some(glob) = cli.ignore {
         ignore.push(glob);
-    }
-    if let Some(p) = cli.config {
-        let p = p.as_path();
-        let data = read_to_string(p)?;
-        config = toml::from_str(&data)?;
-        let dir = p.parent().ok_or("unreachable")?;
-        if let Some(templates) = config.templates {
-            let templates = dir.join(templates);
-            env.set_loader(path_loader(templates));
-        }
-        if let Some(assets) = config.assets {
-            config.assets = Some(dir.join(assets));
-        }
-        if let Some(cert) = config.cert {
-            config.cert = Some(dir.join(cert));
-        }
-        if let Some(key) = config.key {
-            config.key = Some(dir.join(key));
-        }
-        if let Some(mut globs) = config.ignore {
-            ignore.append(&mut globs);
+        if let Some(globs) = config.ignore {
+            ignore.append(&mut globs.clone());
         }
     }
 
