@@ -55,12 +55,21 @@ async fn file_loader (
     state.loader.as_ref().unwrap().get(params.get("file").map_or("", |v| v))
 }
 
+struct Context {
+    method: String,
+    url: String,
+    path: String,
+    query: String,
+    params: Value,
+    vars: Value,
+}
+
 async fn handler (
     state: State<AppState>,
     OriginalUri(url): OriginalUri,
-    Params(params): Params<HashMap<String, String>>,
+    Params(params): Params<Value>,
     Query(vars): Query<Value>,
-    path: MatchedPath,
+    route: MatchedPath,
     headers: HeaderMap,
     method: Method,
     body: String
@@ -69,37 +78,36 @@ async fn handler (
     let env = &state.env;
     let mut context = json!({}); 
     let x = context.as_object_mut().ok_or("unreachable")?;
-    x.insert(String::from("path"), json!(url.path()));
-    x.insert(String::from("query"), json!(url.query()));
+    x.insert(String::from("path"), Value::from(url.path()));
+    x.insert(String::from("query"), Value::from(url.query()));
     x.insert(String::from("headers"), json!({}));
     let h = x.get_mut("headers").ok_or("unreachable")?
         .as_object_mut().ok_or("unreachable")?;
     for key in headers.keys() {
         let v = headers.get(key).ok_or("unreachable")?.to_str()?;
-        h.insert(key.to_string(), json!(v));
+        h.insert(key.to_string(), Value::from(v));
     }
-    x.insert(String::from("params"), json!(params));
+    x.insert(String::from("params"), params);
     x.insert(String::from("vars"), vars);
-    x.insert(String::from("body"), json!(body));
+    x.insert(String::from("body"), Value::from(body.clone()));
     x.insert(String::from("json"), match serde_json::from_str(&body) {
         Ok(data) => data,
-        Err(_) => json!(body)
+        Err(_) => Value::from(body)
     });
-    x.insert(String::from("data"), json!({}));
 
-    let mut route: Option<Route> = None;
+    let mut matched: Option<Route> = None;
     for test in routes {
         if
-            route.is_none() &&
+            matched.is_none() &&
             &test.method == method.as_str() &&
-            &test.path == path.as_str()
+            &test.path == route.as_str()
         {
-            route = Some(test.clone());
+            matched = Some(test.clone());
         }
     }
-    let route = route.ok_or("no route matched!")?;
+    let matched = matched.ok_or("no route matched!")?;
 
-    Ok(env.get_template(&route.template)?.render(&context)?.parse()?)
+    Ok(env.get_template(&matched.template)?.render(&context)?.parse()?)
 }
 
 #[derive(Parser)]
@@ -143,17 +151,6 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let cli = Cli::parse();
 
     let mut env = Environment::new();
-    fn cmd(cmd: String) -> String {
-        let stdout = Command::new("sh")
-            .arg("-c")
-            .arg(&cmd)
-            .output()
-            .expect("failed to execute process")
-            .stdout;
-        let stdout = from_utf8(&stdout).expect("failed to parse output");
-        stdout.to_string()
-    }
-    env.add_function("cmd", cmd);
     let config = Config::new(cli.config.as_deref())?;
 
     let cors: Option<Vec<String>> = match cli.allow_cors {
