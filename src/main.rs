@@ -24,7 +24,7 @@ use minijinja::{Environment, path_loader};
 use reqwest::{Request, RequestBuilder, Client};
 use std::process::Command;
 use crate::assets::Assets;
-use crate::config::{Config, Route, Req, Res};
+use crate::config::{Config, Route};
 
 struct AppError(Box<dyn Error>);
 
@@ -64,7 +64,7 @@ async fn handler (
     headers: HeaderMap,
     method: Method,
     body: String
-) -> Result<(StatusCode, HeaderMap, String), AppError> {
+) -> Result<String, AppError> {
     let routes = &state.routes;
     let env = &state.env;
     let mut context = json!({}); 
@@ -87,8 +87,6 @@ async fn handler (
     });
     x.insert(String::from("data"), json!({}));
 
-    let mut response = (StatusCode::OK, HeaderMap::new(), String::new());
-
     let mut route: Option<Route> = None;
     for test in routes {
         if
@@ -101,72 +99,7 @@ async fn handler (
     }
     let route = route.ok_or("no route matched!")?;
 
-    for req in route.requests.ok_or("unreachable")? {
-        let ctx = context.clone();
-        let mut r = RequestBuilder::from_parts(Client::new(), Request::new(
-            env.get_template(&req.method)?.render(&ctx)?.parse()?,
-            env.get_template(&req.url)?.render(&ctx)?.parse()?
-        ));
-        if let Some(headers) = req.headers {
-            for (key, value) in headers {
-                r = r.header(key.clone(),
-                    env.get_template(&value)?.render(&ctx)?
-                );
-            }
-        }
-        if let Some(body) = req.body {
-            r = r.body(env.get_template(&body)?.render(&ctx)?);
-        }
-        let res = r.send().await?;
-        let status = res.status();
-        let headers = res.headers().clone();
-        let body = res.text().await?;
-        let d = context.get_mut("data").ok_or("unreachable")?
-            .as_object_mut().ok_or("unreachable")?;
-        let json = match serde_json::from_str(&body) {
-            Ok(data) => data,
-            Err(_) => json!(body)
-        };
-
-        if let Some(name) = req.name {
-            d.insert(name.clone(), json!({
-                "status": status.as_u16(),
-                "headers": {},
-                "body": body,
-                "json": json
-            }));
-
-            let h = d.get_mut(&name).ok_or("unreachable")?
-                .get_mut("headers").ok_or("unreachable")?
-                .as_object_mut().ok_or("unreachable")?;
-            for (key, value) in &headers {
-                h.insert(key.to_string(), json!(value.to_str()?));
-            }
-        }
-        response = (status, headers, body)
-    }
-
-    if let Some(res) = route.response {
-        let ctx = context.clone();
-        if let Some(status) = res.status {
-            response.0 = env.get_template(&status)?.render(&ctx)?.parse()?;
-        }
-        if let Some(headers) = res.headers {
-            let mut r = HeaderMap::new();
-            for (key, value) in headers {
-                r.insert(
-                    HeaderName::from_bytes(key.as_bytes())?,
-                    env.get_template(&value)?.render(&ctx)?.parse()?
-                );
-            }
-            response.1 = r;
-        }
-        if let Some(body) = res.body {
-            response.2 = env.get_template(&body)?.render(&ctx)?.parse()?;
-        }
-    }
-
-    Ok(response)
+    Ok(env.get_template(&route.template)?.render(&context)?.parse()?)
 }
 
 #[derive(Parser)]
@@ -240,71 +173,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     let mut app = Router::new();
 
-    let mut r = 0;
-    let mut routes: Vec<Route> = Vec::new();
-    for route in config.routes.unwrap_or(Vec::new()) {
-        let mut i = 0;
-        let mut requests: Vec<Req> = Vec::new();
-        for mut req in route.requests.unwrap_or(Vec::new()) {
-            let name = format!("__r{}_{}_method__", r, i);
-            env.add_template_owned(name.clone(), req.method.clone())?;
-            req.method = name;
-
-            let name = format!("__r{}_{}_url__", r, i);
-            env.add_template_owned(name.clone(), req.url.clone())?;
-            req.url = name;
-
-            if let Some(body) = req.body {
-                let name = format!("__r{}_{}_body__", r, i);
-                req.body = Some(name.clone());
-                env.add_template_owned(name, body.clone())?;
-            }
-
-            let mut headers = HashMap::new();
-            for (key, value) in req.headers.unwrap_or(HashMap::new()) {
-                let v = format!("__r{}_{}_header_{}__", r, i, key);
-                env.add_template_owned(v.clone(), value.clone())?;
-
-                headers.insert(key, v);
-            }
-            req.headers = Some(headers);
-            requests.push(req);
-            i = i+1;
-        }
-
-        let mut response: Option<Res> = None;
-        if let Some(mut res) = route.response {
-            if let Some(status) = res.status {
-                let name = format!("__r{}_status__", r);
-                env.add_template_owned(name.clone(), status)?;
-                res.status = Some(name);
-            }
-
-            if let Some(body) = res.body {
-                let name = format!("__r{}_body__", r);
-                env.add_template_owned(name.clone(), body)?;
-                res.body = Some(name);
-            }
-
-            let mut headers = HashMap::new();
-            for (key, value) in res.headers.unwrap_or(HashMap::new()) {
-                let v = format!("__r{}_header_{}__", r, key);
-                env.add_template_owned(v.clone(), value.clone())?;
-
-                headers.insert(key, v);
-            }
-            res.headers = Some(headers);
-            response = Some(res);
-        }
-        routes.push(Route {
-            method: route.method.clone(),
-            path: route.path.clone(),
-            requests: Some(requests),
-            response: response
-        });
-        r = r+1;
-    }
-    //println!("{:#?}", routes);
+    let routes: Vec<Route> = config.routes.unwrap_or(Vec::new());
 
     let mut loader: Option<Assets> = None;
     if let Some(assets) = cli.assets.or(config.assets) {

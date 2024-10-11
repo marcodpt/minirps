@@ -5,30 +5,12 @@ use std::error::Error;
 use std::path::{Path, PathBuf};
 use std::ffi::OsStr;
 use std::fs::read_to_string;
-use std::collections::HashMap;
-
-#[derive(Deserialize, Clone, Debug)]
-pub struct Req {
-    pub name: Option<String>,
-    pub method: String,
-    pub headers: Option<HashMap<String, String>>,
-    pub url: String,
-    pub body: Option<String>
-}
-
-#[derive(Deserialize, Clone, Debug)]
-pub struct Res {
-    pub status: Option<String>,
-    pub headers: Option<HashMap<String, String>>,
-    pub body: Option<String>
-}
 
 #[derive(Deserialize, Clone, Debug)]
 pub struct Route {
     pub method: String,
     pub path: String,
-    pub requests: Option<Vec<Req>>,
-    pub response: Option<Res>
+    pub template: String
 }
 
 #[derive(Deserialize, Clone, Debug, Default)]
