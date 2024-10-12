@@ -5,7 +5,6 @@ use axum::{
     response::Response,
     http::StatusCode,
     http::header::{HeaderValue, CONTENT_TYPE},
-    body::Body
 };
 use glob_match::glob_match;
 use mime_guess;
@@ -35,11 +34,11 @@ impl Assets {
         }
     }
 
-    pub fn get (&self, path_str: &str) -> Result<Response<Body>, StatusCode> {
+    pub fn get (&self, path_str: &str) -> Result<Response, StatusCode> {
         let path = Path::new(path_str);
         let dir = self.dir.as_path();
         let mut file = dir.join(path);
-        let mut response: Response<Body>;
+        let mut response: Response;
 
         if file.is_dir() {
             file = file.join("index.html");

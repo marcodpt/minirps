@@ -13,8 +13,7 @@ use axum::{
     response::{IntoResponse, Response},
     extract::{Path as Params, Query, State, MatchedPath, Request as Req},
     routing::{get, on, Router},
-    http::{StatusCode, Method, header::{HeaderValue}},
-    body::Body
+    http::{StatusCode, Method, header::{HeaderValue}}
 };
 use axum_server::tls_openssl::OpenSSLConfig;
 use minijinja::{Environment, Value};
@@ -40,16 +39,15 @@ type Env = Environment<'static>;
 #[derive(Clone)]
 struct AppState {
     routes: Vec<Route>,
-    env: Env,
-    loader: Option<Assets>
+    env: Env
 }
 
-async fn file_loader (
+/*async fn file_loader (
     state: State<AppState>,
     Params(params): Params<HashMap<String, String>>,
 ) -> Result<Response<Body>, StatusCode> {
     state.loader.as_ref().unwrap().get(params.get("file").map_or("", |v| v))
-}
+}*/
 
 async fn handler (
     state: State<AppState>,
@@ -139,15 +137,21 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     let mut app = Router::new();
 
-    let mut loader: Option<Assets> = None;
     if let Some(assets) = cli.assets.or(config.assets) {
-        loader = Some(Assets::new(
+        let loader = Assets::new(
             assets,
             cli.all || config.all.unwrap_or(false),
             ignore
-        )?);
-        app = app.route("/", get(file_loader));
-        app = app.route("/*file", get(file_loader));
+        )?;
+        let loader2 = loader.clone();
+        app = app.route("/", get(|| async move {
+            loader2.get("")
+        }));
+        app = app.route("/*file", get(|
+            Params(params): Params<HashMap<String, String>>,
+        | async move {
+            loader.get(params.get("file").map_or("", |v| v))
+        }));
     }
 
     let routes: Vec<Route> = config.routes.unwrap_or(Vec::new());
@@ -174,8 +178,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     let state = AppState {
         routes,
-        env: templates::new(config.templates),
-        loader
+        env: templates::new(config.templates)
     };
     let app = app.with_state(state);
 
