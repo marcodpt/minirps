@@ -1,14 +1,12 @@
 mod templates;
 mod assets;
 mod config;
+mod handler;
 
-use std::str::from_utf8;
 use std::error::Error;
 use std::path::PathBuf;
 use std::collections::HashMap;
 use std::net::SocketAddr;
-use serde::{Deserialize};
-use serde_derive::{Serialize, Deserialize};
 use clap::{Parser};
 use tower_http::cors::{Any, CorsLayer};
 use axum::{
@@ -16,13 +14,13 @@ use axum::{
     extract::{Path as Params, Query, State, MatchedPath, Request as Req},
     routing::{get, on, Router},
     http::{StatusCode, Method, header::{HeaderValue}},
-    body::{to_bytes, Body}
+    body::Body
 };
 use axum_server::tls_openssl::OpenSSLConfig;
 use minijinja::{Environment, Value};
-use reqwest::{Request, RequestBuilder, Client};
 use crate::assets::Assets;
 use crate::config::{Config, Route};
+use crate::handler::{handler as run};
 
 struct AppError(Box<dyn Error>);
 
@@ -53,27 +51,6 @@ async fn file_loader (
     state.loader.as_ref().unwrap().get(params.get("file").map_or("", |v| v))
 }
 
-#[derive(Serialize)]
-struct Context {
-    method: String,
-    url: String,
-    route: String,
-    path: String,
-    query: String,
-    params: Value,
-    vars: Value,
-    headers: HashMap<String, String>,
-    body: String
-}
-
-#[derive(Deserialize)]
-struct Redirect {
-    method: Option<String>,
-    url: String,
-    headers: Option<HashMap<String, String>>,
-    body: Option<String>
-}
-
 async fn handler (
     state: State<AppState>,
     route: MatchedPath,
@@ -82,8 +59,7 @@ async fn handler (
     request: Req,
 ) -> Result<Response, AppError> {
     let routes = &state.routes;
-    let env = &state.env;
-    let route = route.as_str();
+    let route = route.as_str().to_string();
     let method = request.method().as_str().to_string();
 
     let mut matched: Option<Route> = None;
@@ -91,86 +67,20 @@ async fn handler (
         if
             matched.is_none() &&
             &test.method == &method &&
-            &test.path == route
+            &test.path == &route
         {
             matched = Some(test.clone());
         }
     }
     let matched = matched.ok_or("no route matched!")?;
-
-    let mut headers: HashMap<String, String> = HashMap::new();
-    let header_map = request.headers().clone();
-    for key in header_map.keys() {
-        if let Some(value) = header_map.get(key) {
-            if let Ok(value) = value.to_str() {
-                headers.insert(key.to_string(), value.to_string());
-            }
-        }
-    }
-
-    let uri = request.uri().clone();
-    let body = to_bytes(request.into_body(), usize::MAX).await?;
-    let body = from_utf8(&body)?;
-    let context = Context {
-        method: method.clone(),
-        url: uri.to_string(),
-        route: route.to_string(),
-        path: uri.path().to_string(),
-        query: uri.query().unwrap_or("").to_string(),
+    Ok(run(
+        &state.env,
+        &matched.template,
+        route,
         params,
         vars,
-        headers,
-        body: body.to_string()
-    };
-
-    let tpl = env.get_template(&matched.template)?;
-    let (body, state) = tpl.render_and_return_state(&context)?;
-
-    if let Some(redirect) = state.lookup("redirect") {
-        let redirect = Redirect::deserialize(redirect)?;
-        let method = redirect.method.unwrap_or(method);
-
-        let mut r = RequestBuilder::from_parts(Client::new(),
-            Request::new(method.parse()?, redirect.url.parse()?)
-        );
-        for (key, value) in header_map.iter() {
-            r = r.header(key, value);
-        }
-        if let Some(headers) = redirect.headers {
-            for (key, value) in headers.iter() {
-                r = r.header(key, value);
-            }
-        }
-        let res = r.body(redirect.body.unwrap_or(body)).send().await?;
-
-        let mut response = Response::builder()
-            .status(res.status());
-
-        for (key, value) in res.headers().iter() {
-            response = response.header(key, value);
-        }
-
-        return Ok(response.body(res.bytes().await?.into())?);
-    }
-
-    let mut response = Response::builder()
-        .status(200)
-        .header("content-type", "text/html");
-
-    if let Some(status) = state.lookup("status") {
-        if let Ok(status) = u16::try_from(status) {
-            response = response.status(status);
-        }
-    }
-
-    if let Some(headers) = state.lookup("headers") {
-        let headers = HashMap::<String, String>::deserialize(headers)?;
-        for (key, value) in headers.iter() {
-            response = response.header(key, value);
-        }
-    }
-
-    Ok(response.body(body.into())?)
+        request
+    ).await?)
 }
 
 #[derive(Parser)]
