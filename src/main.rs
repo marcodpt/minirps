@@ -2,6 +2,7 @@ mod templates;
 mod assets;
 mod config;
 
+use std::str::from_utf8;
 use std::error::Error;
 use std::path::PathBuf;
 use std::collections::HashMap;
@@ -12,12 +13,10 @@ use clap::{Parser};
 use tower_http::cors::{Any, CorsLayer};
 use axum::{
     response::{IntoResponse, Response},
-    extract::{OriginalUri, Path as Params, Query, State, MatchedPath},
+    extract::{Path as Params, Query, State, MatchedPath, Request as Req},
     routing::{get, on, Router},
-    http::{StatusCode, Method, header::{
-        HeaderMap, HeaderValue
-    }},
-    body::Body
+    http::{StatusCode, Method, header::{HeaderValue}},
+    body::{to_bytes, Body}
 };
 use axum_server::tls_openssl::OpenSSLConfig;
 use minijinja::{Environment, Value};
@@ -77,24 +76,21 @@ struct Redirect {
 
 async fn handler (
     state: State<AppState>,
-    OriginalUri(url): OriginalUri,
+    route: MatchedPath,
     Params(params): Params<Value>,
     Query(vars): Query<Value>,
-    route: MatchedPath,
-    header_map: HeaderMap,
-    method: Method,
-    body: String
+    request: Req,
 ) -> Result<Response, AppError> {
     let routes = &state.routes;
     let env = &state.env;
     let route = route.as_str();
-    let method = method.as_str();
+    let method = request.method().as_str().to_string();
 
     let mut matched: Option<Route> = None;
     for test in routes {
         if
             matched.is_none() &&
-            &test.method == method &&
+            &test.method == &method &&
             &test.path == route
         {
             matched = Some(test.clone());
@@ -103,6 +99,7 @@ async fn handler (
     let matched = matched.ok_or("no route matched!")?;
 
     let mut headers: HashMap<String, String> = HashMap::new();
+    let header_map = request.headers().clone();
     for key in header_map.keys() {
         if let Some(value) = header_map.get(key) {
             if let Ok(value) = value.to_str() {
@@ -111,16 +108,19 @@ async fn handler (
         }
     }
 
+    let uri = request.uri().clone();
+    let body = to_bytes(request.into_body(), usize::MAX).await?;
+    let body = from_utf8(&body)?;
     let context = Context {
-        method: method.to_string(),
-        url: url.to_string(),
+        method: method.clone(),
+        url: uri.to_string(),
         route: route.to_string(),
-        path: url.path().to_string(),
-        query: url.query().unwrap_or("").to_string(),
+        path: uri.path().to_string(),
+        query: uri.query().unwrap_or("").to_string(),
         params,
         vars,
         headers,
-        body: body.clone()
+        body: body.to_string()
     };
 
     let tpl = env.get_template(&matched.template)?;
@@ -128,7 +128,7 @@ async fn handler (
 
     if let Some(redirect) = state.lookup("redirect") {
         let redirect = Redirect::deserialize(redirect)?;
-        let method = redirect.method.unwrap_or(method.to_string());
+        let method = redirect.method.unwrap_or(method);
 
         let mut r = RequestBuilder::from_parts(Client::new(),
             Request::new(method.parse()?, redirect.url.parse()?)
