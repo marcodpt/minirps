@@ -6,7 +6,7 @@ use std::error::Error;
 use std::path::PathBuf;
 use std::collections::HashMap;
 use std::net::SocketAddr;
-use serde_json::{from_value, json};
+use serde::{Deserialize};
 use serde_derive::{Serialize, Deserialize};
 use clap::{Parser};
 use tower_http::cors::{Any, CorsLayer};
@@ -20,7 +20,7 @@ use axum::{
     body::Body
 };
 use axum_server::tls_openssl::OpenSSLConfig;
-use minijinja::{Environment, path_loader, Value};
+use minijinja::{Environment, Value};
 use reqwest::{Request, RequestBuilder, Client};
 use crate::assets::Assets;
 use crate::config::{Config, Route};
@@ -127,7 +127,7 @@ async fn handler (
     let (body, state) = tpl.render_and_return_state(&context)?;
 
     if let Some(redirect) = state.lookup("redirect") {
-        let redirect: Redirect = from_value(json!(redirect))?;
+        let redirect = Redirect::deserialize(redirect)?;
         let method = redirect.method.unwrap_or(method.to_string());
 
         let mut r = RequestBuilder::from_parts(Client::new(),
@@ -164,7 +164,7 @@ async fn handler (
     }
 
     if let Some(headers) = state.lookup("headers") {
-        let headers: HashMap<String, String> = from_value(json!(headers))?;
+        let headers = HashMap::<String, String>::deserialize(headers)?;
         for (key, value) in headers.iter() {
             response = response.header(key, value);
         }
@@ -213,7 +213,6 @@ struct Cli {
 async fn main() -> Result<(), Box<dyn Error>> {
     let cli = Cli::parse();
 
-    let mut env = Environment::new();
     let config = Config::new(cli.config.as_deref())?;
 
     let cors: Option<Vec<String>> = match cli.allow_cors {
@@ -221,9 +220,6 @@ async fn main() -> Result<(), Box<dyn Error>> {
         false => None
     };
     let mut ignore: Vec<String> = Vec::new();
-    if let Some(templates) = config.templates {
-        env.set_loader(path_loader(templates));
-    }
     if let Some(glob) = cli.ignore {
         ignore.push(glob);
         if let Some(globs) = config.ignore {
@@ -232,8 +228,6 @@ async fn main() -> Result<(), Box<dyn Error>> {
     }
 
     let mut app = Router::new();
-
-    let routes: Vec<Route> = config.routes.unwrap_or(Vec::new());
 
     let mut loader: Option<Assets> = None;
     if let Some(assets) = cli.assets.or(config.assets) {
@@ -246,6 +240,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         app = app.route("/*file", get(file_loader));
     }
 
+    let routes: Vec<Route> = config.routes.unwrap_or(Vec::new());
     for route in &routes {
         app = app.route(&route.path, on(
             Method::from_bytes(route.method.as_bytes())?.try_into()?,
@@ -269,7 +264,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     let state = AppState {
         routes,
-        env,
+        env: templates::new(config.templates),
         loader
     };
     let app = app.with_state(state);
