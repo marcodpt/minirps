@@ -1,7 +1,7 @@
 mod templates;
 mod assets;
 mod config;
-mod handler;
+mod app;
 
 use std::error::Error;
 use std::path::PathBuf;
@@ -10,42 +10,14 @@ use std::net::SocketAddr;
 use clap::{Parser};
 use tower_http::cors::{Any, CorsLayer};
 use axum::{
-    response::Response,
-    extract::{Path, Query, State, Request},
+    extract::Path,
     routing::{get, on, Router},
-    http::{StatusCode, Method, header::{HeaderValue}}
+    http::{Method, header::{HeaderValue}}
 };
 use axum_server::tls_openssl::OpenSSLConfig;
-use minijinja::{Environment, Value};
 use crate::assets::Assets;
-use crate::config::{Config, Route};
-use crate::handler::{handler as run};
-
-type Env = Environment<'static>;
-#[derive(Clone)]
-struct AppState {
-    route: Route,
-    env: Env
-}
-
-async fn handler (
-    state: State<AppState>,
-    Path(params): Path<Value>,
-    Query(vars): Query<Value>,
-    request: Request,
-) -> Result<Response, (StatusCode, String)> {
-    match run(
-        &state.env,
-        &state.route.template,
-        state.route.path.clone(),
-        params,
-        vars,
-        request
-    ).await {
-        Ok(response) => Ok(response),
-        Err(err) => Err((StatusCode::INTERNAL_SERVER_ERROR, err.to_string()))
-    }
-}
+use crate::config::Config;
+use crate::app::{AppState, handler};
 
 #[derive(Parser)]
 #[command(author, version, about, long_about = None)]
@@ -122,10 +94,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
             app = app.route(&route.path, on(
                 Method::from_bytes(route.method.as_bytes())?.try_into()?,
                 handler
-            ).with_state(AppState {
-                route: route.clone(),
-                env: env.clone()
-            }));
+            ).with_state(AppState::new(&env, &route)));
         }
     }
 
