@@ -38,7 +38,18 @@ impl AppState {
             &self.route.path, params, vars, request
         ).await?;
         let tpl = self.env.get_template(&self.route.template)?;
-        let (body, state) = tpl.render_and_return_state(&context)?;
+        let (body, state) = match tpl.render_and_return_state(&context) {
+            Ok(result) => result,
+            Err(err) => {
+                let mut info = format!("Could not render template: {:#}", err);
+                let mut err = &err as &dyn Error;
+                while let Some(next_err) = err.source() {
+                    info = format!("{}\ncaused by: {:#}", info, next_err);
+                    err = next_err;
+                }
+                return Err(info.into());
+            }
+        };
 
         if let Some(redirect) = state.lookup("redirect") {
             Redirect::new(

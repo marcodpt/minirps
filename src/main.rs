@@ -101,8 +101,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     let cors = if cli.allow_cors {Some(Vec::new())} else {config.cors};
     if let Some(origins) = cors {
-        let mut layer = CorsLayer::new()
-            .allow_methods(Any);
+        let mut layer = CorsLayer::new().allow_methods(Any);
 
         if origins.len() == 0 {
             layer = layer.allow_origin(Any);
