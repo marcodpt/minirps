@@ -10,8 +10,8 @@ use std::net::SocketAddr;
 use clap::{Parser};
 use tower_http::cors::{Any, CorsLayer};
 use axum::{
-    response::{IntoResponse, Response},
-    extract::{Path as Params, Query, State, MatchedPath, Request as Req},
+    response::Response,
+    extract::{Path, Query, State, Request},
     routing::{get, on, Router},
     http::{StatusCode, Method, header::{HeaderValue}}
 };
@@ -21,64 +21,30 @@ use crate::assets::Assets;
 use crate::config::{Config, Route};
 use crate::handler::{handler as run};
 
-struct AppError(Box<dyn Error>);
-
-impl IntoResponse for AppError {
-    fn into_response(self) -> Response {
-        (StatusCode::INTERNAL_SERVER_ERROR, self.0.to_string()).into_response()
-    }
-}
-
-impl<E> From<E> for AppError where  E: Into<Box<dyn Error>> {
-    fn from(err: E) -> Self {
-        Self(err.into())
-    }
-}
-
 type Env = Environment<'static>;
 #[derive(Clone)]
 struct AppState {
-    routes: Vec<Route>,
+    route: Route,
     env: Env
 }
 
-/*async fn file_loader (
-    state: State<AppState>,
-    Params(params): Params<HashMap<String, String>>,
-) -> Result<Response<Body>, StatusCode> {
-    state.loader.as_ref().unwrap().get(params.get("file").map_or("", |v| v))
-}*/
-
 async fn handler (
     state: State<AppState>,
-    route: MatchedPath,
-    Params(params): Params<Value>,
+    Path(params): Path<Value>,
     Query(vars): Query<Value>,
-    request: Req,
-) -> Result<Response, AppError> {
-    let routes = &state.routes;
-    let route = route.as_str().to_string();
-    let method = request.method().as_str().to_string();
-
-    let mut matched: Option<Route> = None;
-    for test in routes {
-        if
-            matched.is_none() &&
-            &test.method == &method &&
-            &test.path == &route
-        {
-            matched = Some(test.clone());
-        }
-    }
-    let matched = matched.ok_or("no route matched!")?;
-    Ok(run(
+    request: Request,
+) -> Result<Response, (StatusCode, String)> {
+    match run(
         &state.env,
-        &matched.template,
-        route,
+        &state.route.template,
+        state.route.path.clone(),
         params,
         vars,
         request
-    ).await?)
+    ).await {
+        Ok(response) => Ok(response),
+        Err(err) => Err((StatusCode::INTERNAL_SERVER_ERROR, err.to_string()))
+    }
 }
 
 #[derive(Parser)]
@@ -120,24 +86,18 @@ struct Cli {
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
     let cli = Cli::parse();
-
     let config = Config::new(cli.config.as_deref())?;
-
-    let cors: Option<Vec<String>> = match cli.allow_cors {
-        true => Some(Vec::new()),
-        false => None
-    };
-    let mut ignore: Vec<String> = Vec::new();
-    if let Some(glob) = cli.ignore {
-        ignore.push(glob);
-        if let Some(globs) = config.ignore {
-            ignore.append(&mut globs.clone());
-        }
-    }
-
     let mut app = Router::new();
 
     if let Some(assets) = cli.assets.or(config.assets) {
+        let mut ignore: Vec<String> = Vec::new();
+        if let Some(glob) = cli.ignore {
+            ignore.push(glob);
+            if let Some(globs) = config.ignore {
+                ignore.append(&mut globs.clone());
+            }
+        }
+
         let loader = Assets::new(
             assets,
             cli.all || config.all.unwrap_or(false),
@@ -148,21 +108,30 @@ async fn main() -> Result<(), Box<dyn Error>> {
             loader2.get("")
         }));
         app = app.route("/*file", get(|
-            Params(params): Params<HashMap<String, String>>,
+            Path(params): Path<HashMap<String, String>>,
         | async move {
             loader.get(params.get("file").map_or("", |v| v))
         }));
     }
 
-    let routes: Vec<Route> = config.routes.unwrap_or(Vec::new());
-    for route in &routes {
-        app = app.route(&route.path, on(
-            Method::from_bytes(route.method.as_bytes())?.try_into()?,
-            handler
-        ));
+    if let (Some(templates), Some(routes)) = (
+        config.templates, config.routes
+    ) {
+        let env = templates::new(templates);
+        for route in &routes {
+            app = app.route(&route.path, on(
+                Method::from_bytes(route.method.as_bytes())?.try_into()?,
+                handler
+            ).with_state(AppState {
+                route: route.clone(),
+                env: env.clone()
+            }));
+        }
     }
 
-    if let Some(origins) = cors.or(config.cors) {
+
+    let cors = if cli.allow_cors {Some(Vec::new())} else {config.cors};
+    if let Some(origins) = cors {
         let mut layer = CorsLayer::new()
             .allow_methods(Any);
 
@@ -176,20 +145,12 @@ async fn main() -> Result<(), Box<dyn Error>> {
         app = app.layer(layer);
     }
 
-    let state = AppState {
-        routes,
-        env: templates::new(config.templates)
-    };
-    let app = app.with_state(state);
-
     let port = cli.port.unwrap_or(config.port.unwrap_or(3000));
     let addr = SocketAddr::from(([127, 0, 0, 1], port));
-    let cert = cli.cert.or(config.cert);
-    let key = cli.key.or(config.key);
 
-    if cert.is_some() && key.is_some() {
-        let cert = cert.ok_or("unreachable")?;
-        let key = key.ok_or("unreachable")?;
+    if let (Some(cert), Some(key)) = (
+        cli.cert.or(config.cert), cli.key.or(config.key)
+    ) {
         let config = OpenSSLConfig::from_pem_file(cert, key)?;
 
         println!("Server started at https://localhost:{}", port);
