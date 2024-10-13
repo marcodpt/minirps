@@ -16,13 +16,13 @@ pub struct Redirect {
 
 impl Redirect {
     pub async fn new (
-        method: String,
+        method: &str,
         headers: &HashMap<String, String>,
-        body: String,
+        body: &str,
         redirect: &Value
     ) -> Result<Response, Box<dyn Error>> {
         let redirect = Redirect::deserialize(redirect)?;
-        let method = redirect.method.unwrap_or(method);
+        let method = redirect.method.unwrap_or(method.to_string());
 
         let mut r = RequestBuilder::from_parts(Client::new(),
             Request::new(method.parse()?, redirect.url.parse()?)
@@ -35,7 +35,8 @@ impl Redirect {
                 r = r.header(key, value);
             }
         }
-        let result = r.body(redirect.body.unwrap_or(body)).send().await?;
+        let result = r.body(redirect.body.unwrap_or(body.to_string()))
+            .send().await?;
 
         let mut response = Response::builder()
             .status(result.status());
