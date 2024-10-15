@@ -1,5 +1,4 @@
 use std::error::Error;
-use std::str::from_utf8;
 use std::collections::HashMap;
 use serde_derive::Serialize;
 use minijinja::Value;
@@ -15,7 +14,7 @@ pub struct Context {
     params: Value,
     vars: Value,
     pub headers: HashMap<String, String>,
-    pub body: String
+    pub body: Vec<u8>
 }
 
 impl Context {
@@ -36,7 +35,6 @@ impl Context {
         }
         let uri = request.uri().clone();
         let body = to_bytes(request.into_body(), usize::MAX).await?;
-        let body = from_utf8(&body)?;
         Ok(Context {
             method: method.to_string(),
             url: uri.to_string(),
@@ -46,7 +44,7 @@ impl Context {
             params,
             vars,
             headers,
-            body: body.to_string()
+            body: body.to_vec()
         })
     }
 }

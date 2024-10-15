@@ -34,12 +34,12 @@ fn fetch (
     match request.send() {
         Ok(response) => {
             if response.status().is_success() {
-                match response.text() {
-                    Ok(text) => Ok(text.into()),
+                match response.bytes() {
+                    Ok(bytes) => Ok(bytes.to_vec().into()),
                     Err(err) => Err(Error::new(
                         InvalidOperation,
                         format!(
-                            "Fail to parse response text!\n{}\n{:#}",
+                            "Fail to parse response!\n{}\n{:#}",
                             info, err
                         )
                     ))

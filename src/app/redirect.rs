@@ -11,14 +11,14 @@ pub struct Redirect {
     method: Option<String>,
     url: String,
     headers: Option<HashMap<String, String>>,
-    body: Option<String>
+    body: Option<Vec<u8>>
 }
 
 impl Redirect {
     pub async fn new (
         method: &str,
         headers: &HashMap<String, String>,
-        body: &str,
+        body: &Vec<u8>,
         redirect: &Value
     ) -> Result<Response, Box<dyn Error>> {
         let redirect = Redirect::deserialize(redirect)?;
@@ -35,7 +35,7 @@ impl Redirect {
                 r = r.header(key, value);
             }
         }
-        let result = r.body(redirect.body.unwrap_or(body.to_string()))
+        let result = r.body(redirect.body.unwrap_or(body.to_vec()))
             .send().await?;
 
         let mut response = Response::builder()

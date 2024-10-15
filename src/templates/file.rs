@@ -1,7 +1,7 @@
 use std::fs;
 use std::path::{Path};
-use std::str::from_utf8;
 use minijinja::{Error, ErrorKind::InvalidOperation, Value};
+use serde_json::to_string_pretty;
 
 pub fn read (entry: &str) -> Result<Value, Error> {
     let path = Path::new(entry);
@@ -30,15 +30,7 @@ pub fn read (entry: &str) -> Result<Value, Error> {
             }
         } else {
             match fs::read(path) {
-                Ok(data) => {
-                    match from_utf8(&data) {
-                        Ok(data) => Ok(data.into()),
-                        Err(err) => Err(Error::new(
-                            InvalidOperation,
-                            format!("Binary file: {}\n{:#}", entry, err)
-                        ))
-                    }
-                },
+                Ok(data) => Ok(data.into()),
                 Err(err) => Err(Error::new(
                     InvalidOperation,
                     format!("Fail to read file: {}\n{:#}", entry, err)
@@ -53,7 +45,7 @@ pub fn read (entry: &str) -> Result<Value, Error> {
     }
 }
 
-pub fn write (file: &str, data: &str) -> Result<(), Error> {
+pub fn write (file: &str, data: &Value) -> Result<(), Error> {
     let path = Path::new(file);
 
     if let Some(dir) = path.parent() {
@@ -72,14 +64,32 @@ pub fn write (file: &str, data: &str) -> Result<(), Error> {
         }
     }
 
-    match fs::write(path, data) {
-        Ok(_) => Ok(()),
-        Err(err) => Err(Error::new(
-            InvalidOperation,
-            format!("Unable to write file: {}\n{:#}",
-                file, err
-            )
-        ))
+    if let Some(data) = data.as_bytes() {
+        match fs::write(path, data) {
+            Ok(_) => Ok(()),
+            Err(err) => Err(Error::new(
+                InvalidOperation,
+                format!("Unable to write file: {}\n{:#}",
+                    file, err
+                )
+            ))
+        }
+    } else {
+        match to_string_pretty(data.into()) {
+            Ok(data) => match fs::write(path, data) {
+                Ok(_) => Ok(()),
+                Err(err) => Err(Error::new(
+                    InvalidOperation,
+                    format!("Unable to write file: {}\n{:#}",
+                        file, err
+                    )
+                ))
+            },
+            Err(err) => Err(Error::new(
+                InvalidOperation,
+                format!("Unable to format data!\n{:#}", err)
+            ))
+        }
     }
 }
 

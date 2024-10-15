@@ -1,40 +1,29 @@
 use serde_json;
 use toml;
-use minijinja::{Error, ErrorKind::InvalidOperation, Value};
+use std::str::from_utf8;
+use minijinja::{Value, value::ValueKind};
 
-fn parse_json (value: &str) -> Result<Value, Error> {
-    match serde_json::from_str::<Value>(value) {
-        Ok(result) => Ok(result),
-        Err(err) => Err(Error::new(
-            InvalidOperation,
-            format!("Fail to parse to JSON\n{:#}", err)
-        ))
-    }
-}
+pub fn parse (value: &Value) -> Value {
+    let mut value = value.clone();
 
-fn parse_toml (value: &str) -> Result<Value, Error> {
-    match toml::from_str::<Value>(value) {
-        Ok(result) => Ok(result),
-        Err(err) => Err(Error::new(
-            InvalidOperation,
-            format!("Fail to parse to TOML\n{:#}", err)
-        ))
-    }
-}
-
-pub fn parse (value: &str, encoding: Option<&str>) -> Result<Value, Error> {
-    if let Some(encoding) = encoding {
-        match encoding {
-            "json" => parse_json(value),
-            "toml" => parse_toml(value),
-            encoding => Err(Error::new(
-                InvalidOperation,
-                format!("{} encoding not implemented!", encoding)
-            ))
+    if value.kind() == ValueKind::Bytes {
+        if let Some(data) = value.as_bytes() {
+            value = match from_utf8(data) {
+                Ok(data) => Value::from_serialize(data),
+                Err(_) => value
+            };
         }
-    } else {
-        parse_json(value)
-            .or(parse_toml(value))
-            .or(Ok(value.into()))
     }
+
+    if value.kind() == ValueKind::String {
+        if let Some(data) = value.as_str() {
+            value = match serde_json::from_str::<Value>(data) 
+                .or(toml::from_str::<Value>(data)) {
+                    Ok(data) => data,
+                    Err(_) => value
+                };
+        }
+    }
+
+    value
 }
