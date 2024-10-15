@@ -2,9 +2,11 @@ mod parse;
 mod command;
 mod file;
 mod fetch;
+mod format;
 
 use minijinja::{Environment, path_loader};
 use parse::parse;
+use format::format;
 use command::command;
 use file::{read, write, remove};
 use fetch::{get, delete, head, options, post, put, patch};
@@ -16,6 +18,7 @@ pub fn new (dir: PathBuf) -> Environment<'static> {
     env.set_loader(path_loader(dir));
 
     env.add_filter("parse", parse);
+    env.add_filter("format", format);
     env.add_function("command", command);
     env.add_function("read", read);
     env.add_function("write", write);

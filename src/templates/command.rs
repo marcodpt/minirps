@@ -1,35 +1,31 @@
 use serde_derive::Serialize;
 use std::process::Command;
-use minijinja::{Error, ErrorKind::InvalidOperation, Value};
+use minijinja::Value;
 
 #[derive(Serialize)]
 struct Output {
-    code: Option<i32>,
+    code: i32,
     stdout: Vec<u8>,
     stderr: Vec<u8>
 }
 
-pub fn command(
-    command: String,
-    full: Option<bool>
-) -> Result<Value, Error> {
+pub fn command(command: String) -> Value {
     let result = match Command::new("sh").arg("-c").arg(&command).output() {
         Ok(result) => result,
         Err(err) => {
-            return Err(Error::new(
-                InvalidOperation,
-                format!("Fail to execute command!\n\n{:#}", err)
-            ));
+            return Value::from_serialize(Output {
+                code: 999999,
+                stdout: format!(
+                    "Fail to execute command!"
+                ).as_bytes().to_vec(),
+                stderr: format!("{:#?}", err).as_bytes().to_vec()
+            });
         }
     };
 
-    if full.unwrap_or(false) {
-        Ok(Value::from_serialize(Output {
-            code: result.status.code(),
-            stdout: result.stdout,
-            stderr: result.stderr
-        }))
-    } else {
-        Ok(result.stdout.into())
-    }
+    Value::from_serialize(Output {
+        code: result.status.code().unwrap_or(0),
+        stdout: result.stdout,
+        stderr: result.stderr
+    })
 }
