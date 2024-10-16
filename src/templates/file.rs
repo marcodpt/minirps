@@ -26,7 +26,6 @@ pub fn read (entry: &str) -> Result<Value, Error> {
                     InvalidOperation,
                     format!("Fail to open directory: {}\n{:#}", entry, err)
                 ))
-                
             }
         } else {
             match fs::read(path) {
