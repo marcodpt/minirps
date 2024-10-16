@@ -1,12 +1,38 @@
-use minijinja::Value;
+use minijinja::{Error, ErrorKind::InvalidOperation, Value};
 use serde_json::to_string_pretty;
 
-pub fn format (value: &Value) -> Vec<u8> {
-    if let Some(data) = value.as_bytes() {
-        data.to_vec()
-    } else if let Ok(data) = to_string_pretty(value.into()) {
-        data.as_bytes().to_vec()
-    } else {
-        format!("{:#?}", value).as_bytes().to_vec()
+pub fn format (
+    value: &Value,
+    encoding: &str
+) -> Result<Vec<u8>, Error> {
+    match encoding {
+        "json" => {
+            match to_string_pretty(value.into()) {
+                Ok(data) => Ok(data.as_bytes().to_vec()),
+                Err(err) => Err(Error::new(
+                    InvalidOperation,
+                    format!("Unable to format JSON!\n{:#}", err)
+                ))
+            }
+        },
+        "debug" => {
+            Ok(format!("{:#?}", value).as_bytes().to_vec())
+        },
+        "raw" => {
+            if let Some(data) = value.as_bytes() {
+                Ok(data.to_vec())
+            } else {
+                Err(Error::new(
+                    InvalidOperation,
+                    format!("Data cannot be converted to bytes!")
+                ))
+            }
+        },
+        encoding => {
+            Err(Error::new(
+                InvalidOperation,
+                format!("Format {} not implemented!", encoding)
+            ))
+        }
     }
 }
