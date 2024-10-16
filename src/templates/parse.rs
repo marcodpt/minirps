@@ -1,29 +1,22 @@
 use serde_json;
 use toml;
 use std::str::from_utf8;
-use minijinja::{Value, value::ValueKind};
+use minijinja::{Error, ErrorKind::InvalidOperation, Value};
 
-pub fn parse (value: &Value) -> Value {
-    let mut value = value.clone();
-
-    if value.kind() == ValueKind::Bytes {
-        if let Some(data) = value.as_bytes() {
-            value = match from_utf8(data) {
-                Ok(data) => Value::from_serialize(data),
-                Err(_) => value
-            };
+pub fn parse (data: Vec<u8>) -> Result<Value, Error> {
+    let text = match from_utf8(&data) {
+        Ok(text) => text,
+        Err(err) => {
+            return Err(Error::new(
+                InvalidOperation,
+                format!("Unable to parse binary data into utf8!\n{:#}", err)
+            ))
         }
-    }
+    };
 
-    if value.kind() == ValueKind::String {
-        if let Some(data) = value.as_str() {
-            value = match serde_json::from_str::<Value>(data) 
-                .or(toml::from_str::<Value>(data)) {
-                    Ok(data) => data,
-                    Err(_) => value
-                };
-        }
-    }
-
-    value
+    Ok(match serde_json::from_str::<Value>(text) 
+        .or(toml::from_str::<Value>(text)) {
+            Ok(value) => value,
+            Err(_) => Value::from(text)
+        })
 }
