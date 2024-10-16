@@ -1,5 +1,6 @@
 use minijinja::{Error, ErrorKind::InvalidOperation, Value};
-use serde_json::to_string_pretty;
+use serde_json;
+use toml;
 
 pub fn format (
     value: &Value,
@@ -7,11 +8,20 @@ pub fn format (
 ) -> Result<Vec<u8>, Error> {
     match encoding {
         "json" => {
-            match to_string_pretty(value.into()) {
+            match serde_json::to_string_pretty(value.into()) {
                 Ok(data) => Ok(data.as_bytes().to_vec()),
                 Err(err) => Err(Error::new(
                     InvalidOperation,
                     format!("Unable to format JSON!\n{:#}", err)
+                ))
+            }
+        },
+        "toml" => {
+            match toml::to_string_pretty(value.into()) {
+                Ok(data) => Ok(data.as_bytes().to_vec()),
+                Err(err) => Err(Error::new(
+                    InvalidOperation,
+                    format!("Unable to format TOML!\n{:#}", err)
                 ))
             }
         },

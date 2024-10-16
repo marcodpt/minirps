@@ -22,7 +22,7 @@ use crate::app::{AppState, handler};
 #[derive(Parser)]
 #[command(author, version, about, long_about = None)]
 struct Cli {
-    /// config.toml file path.
+    /// config file path. (Accept: .json, .toml)
     #[clap(short='f', long)]
     config: Option<PathBuf>,
 
