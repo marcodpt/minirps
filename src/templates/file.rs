@@ -5,6 +5,9 @@ use serde_derive::Serialize;
 
 #[derive(Serialize)]
 struct File {
+    accessed: String,
+    created: String,
+    modified: String,
     is_dir: bool,
     is_file: bool,
     is_symlink: bool,
@@ -30,10 +33,25 @@ pub fn read (entry: &str) -> Option<Value> {
                                 }
                             }
                             let mut len: u64 = 0;
+                            let mut accessed = String::new();
+                            let mut created = String::new();
+                            let mut modified = String::new();
                             if let Ok(meta) = p.metadata() {
                                 len = meta.len();
+                                if let Ok(time) = meta.accessed() {
+                                    accessed = format!("{time:?}");
+                                }
+                                if let Ok(time) = meta.created() {
+                                    created = format!("{time:?}");
+                                }
+                                if let Ok(time) = meta.modified() {
+                                    modified = format!("{time:?}");
+                                }
                             }
                             files.push(File {
+                                accessed,
+                                created,
+                                modified,
                                 is_dir: p.is_dir(),
                                 is_file: p.is_file(),
                                 is_symlink: p.is_symlink(),
