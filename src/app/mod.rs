@@ -83,10 +83,11 @@ impl AppState {
 
 pub async fn handler (
     state: State<AppState>,
-    Path(params): Path<Value>,
+    //Path(params): Path<Value>,
     Query(vars): Query<Value>,
     request: Request,
 ) -> Result<Response, (StatusCode, String)> {
+    let params = Value::from(0);
     match state.run(params, vars, request).await {
         Ok(response) => Ok(response),
         Err(err) => Err((StatusCode::INTERNAL_SERVER_ERROR, err.to_string()))

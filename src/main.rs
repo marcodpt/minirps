@@ -3,6 +3,7 @@ mod assets;
 mod config;
 mod app;
 
+use std::process::ExitCode;
 use std::error::Error;
 use std::path::PathBuf;
 use std::collections::HashMap;
@@ -55,14 +56,14 @@ struct Cli {
     ignore: Option<String>,
 }
 
-#[tokio::main]
-async fn main() -> Result<(), Box<dyn Error>> {
+fn init () -> Result<(Router, u16, Option<OpenSSLConfig>), Box<dyn Error>> {
     let cli = Cli::parse();
     let config = Config::new(cli.config.as_deref())?;
     let mut app = Router::new();
 
     if let Some(assets) = cli.assets.or(config.assets) {
         let mut ignore: Vec<String> = Vec::new();
+        let has_home = assets.as_path().join("index.html").is_file();
         if let Some(glob) = cli.ignore {
             ignore.push(glob);
             if let Some(globs) = config.ignore {
@@ -75,10 +76,12 @@ async fn main() -> Result<(), Box<dyn Error>> {
             cli.all || config.all.unwrap_or(false),
             ignore
         )?;
-        let loader2 = loader.clone();
-        app = app.route("/", get(|| async move {
-            loader2.get("")
-        }));
+        if has_home {
+            let loader2 = loader.clone();
+            app = app.route("/", get(|| async move {
+                loader2.get("")
+            }));
+        }
         app = app.route("/*file", get(|
             Path(params): Path<HashMap<String, String>>,
         | async move {
@@ -114,23 +117,48 @@ async fn main() -> Result<(), Box<dyn Error>> {
     }
 
     let port = cli.port.unwrap_or(config.port.unwrap_or(3000));
-    let addr = SocketAddr::from(([127, 0, 0, 1], port));
 
+    let mut ssl: Option<OpenSSLConfig> = None;
     if let (Some(cert), Some(key)) = (
         cli.cert.or(config.cert), cli.key.or(config.key)
     ) {
-        let config = OpenSSLConfig::from_pem_file(cert, key)?;
-
-        println!("Server started at https://localhost:{}", port);
-        axum_server::bind_openssl(addr, config)
-            .serve(app.into_make_service())
-            .await?;
-    } else {
-        println!("Server started at http://localhost:{}", port);
-        axum_server::bind(addr)
-            .serve(app.into_make_service())
-            .await?;
+        ssl = Some(OpenSSLConfig::from_pem_file(cert, key)?);
     }
 
-    Ok(())
+    Ok((app, port, ssl))
+}
+
+#[tokio::main]
+async fn main() -> Result<(), ExitCode> {
+    let (app, port, ssl) = match init() {
+        Ok(server) => server,
+        Err(err) => {
+            println!("{}", err);
+            return Err(ExitCode::from(1));
+        }
+    };
+    let addr = SocketAddr::from(([127, 0, 0, 1], port));
+
+    let server = match ssl {
+        Some(ssl) => {
+            println!("Server started at https://localhost:{}", port);
+            axum_server::bind_openssl(addr, ssl)
+                .serve(app.into_make_service()).await
+        },
+        None => {
+            println!("Server started at http://localhost:{}", port);
+            axum_server::bind(addr)
+                .serve(app.into_make_service()).await
+        }
+    };
+
+    match server {
+        Ok(_) => {
+            Ok(())
+        },
+        Err(err) => {
+            println!("Fail to start server!\n{:#?}", err);
+            Err(ExitCode::from(2))
+        }
+    }
 }

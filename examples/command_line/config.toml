@@ -7,7 +7,4 @@ assets = "assets"
 [[routes]]
 method = "GET"
 path = "/"
-
-[routes.response]
-body = "{% include 'index.html' %}"
-headers = { Content-Type = "text/html" }
+template = "index.html"

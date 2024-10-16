@@ -10,7 +10,7 @@
 <body>
   <main>
     <h1>Command Line</h1>
-    <pre><code>{{cmd("ls -l")}}</code></pre>
+    <pre><code>{{command("ls -l").stdout |parse}}</code></pre>
   </main>
   <footer>
     <p>Mini RPS</p>
