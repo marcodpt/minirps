@@ -23,6 +23,7 @@ pub struct Config {
     pub key: Option<PathBuf>,
     pub assets: Option<PathBuf>, 
     pub templates: Option<PathBuf>, 
+    pub data: Option<PathBuf>, 
     pub routes: Option<Vec<Route>>
 }
 

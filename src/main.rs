@@ -3,7 +3,6 @@ mod assets;
 mod config;
 mod app;
 
-use std::process::ExitCode;
 use std::error::Error;
 use std::path::PathBuf;
 use std::collections::HashMap;
@@ -92,7 +91,7 @@ fn init () -> Result<(Router, u16, Option<OpenSSLConfig>), Box<dyn Error>> {
     if let (Some(templates), Some(routes)) = (
         config.templates, config.routes
     ) {
-        let env = templates::new(templates);
+        let env = templates::new(templates, config.data)?;
         for route in &routes {
             app = app.route(&route.path, on(
                 Method::from_bytes(route.method.as_bytes())?.try_into()?,
@@ -129,12 +128,12 @@ fn init () -> Result<(Router, u16, Option<OpenSSLConfig>), Box<dyn Error>> {
 }
 
 #[tokio::main]
-async fn main() -> Result<(), ExitCode> {
+async fn main() -> () {
     let (app, port, ssl) = match init() {
         Ok(server) => server,
         Err(err) => {
             println!("{}", err);
-            return Err(ExitCode::from(1));
+            return ();
         }
     };
     let addr = SocketAddr::from(([127, 0, 0, 1], port));
@@ -153,12 +152,10 @@ async fn main() -> Result<(), ExitCode> {
     };
 
     match server {
-        Ok(_) => {
-            Ok(())
-        },
+        Ok(_) => (),
         Err(err) => {
-            println!("Fail to start server!\n{:#?}", err);
-            Err(ExitCode::from(2))
+            println!("Fail to start server!\n{}", err.to_string());
+            ()
         }
     }
 }
