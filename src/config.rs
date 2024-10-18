@@ -79,6 +79,9 @@ impl Config {
                     if let Some(templates) = config.templates {
                         config.templates = Some(dir.join(templates));
                     }
+                    if let Some(data) = config.data {
+                        config.data = Some(dir.join(data));
+                    }
                     if let Some(assets) = config.assets {
                         config.assets = Some(dir.join(assets));
                     }

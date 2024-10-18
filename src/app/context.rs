@@ -1,7 +1,6 @@
 use std::error::Error;
 use std::collections::HashMap;
 use serde_derive::Serialize;
-use minijinja::Value;
 use axum::{extract::Request, body::to_bytes};
 
 #[derive(Serialize)]
@@ -11,8 +10,8 @@ pub struct Context {
     route: String,
     path: String,
     query: String,
-    params: Value,
-    vars: Value,
+    params: HashMap<String, String>,
+    vars: HashMap<String, String>,
     pub headers: HashMap<String, String>,
     pub body: Vec<u8>
 }
@@ -20,8 +19,8 @@ pub struct Context {
 impl Context {
     pub async fn new (
         route: &str,
-        params: Value,
-        vars: Value,
+        params: HashMap<String, String>,
+        vars: HashMap<String, String>,
         request: Request
     ) -> Result<Context, Box<dyn Error>> {
         let method = request.method().as_str().to_string();

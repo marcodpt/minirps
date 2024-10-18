@@ -2,30 +2,25 @@
 
 port = 3002
 assets = "assets"
+data = "data"
 templates = "templates"
 
 [[routes]]
 method = "GET"
 path = "/"
-
-[[routes.requests]]
-name = "elements"
-method = "GET"
-url = "http://localhost:3002/data.json"
-
-[routes.response]
-body = "{% include 'table.html' %}"
-headers = { Content-Type = "text/html" }
+template = "table.html"
 
 [[routes]]
 method = "GET"
-path = "/:element"
+path = "/element/:element"
+template = "element.html"
 
-[[routes.requests]]
-name = "elements"
+[[routes]]
 method = "GET"
-url = "http://localhost:3002/data.json"
+path = "/json"
+template = "json.html"
 
-[routes.response]
-body = "{% include 'element.html' %}"
-headers = { Content-Type = "text/html" }
+[[routes]]
+method = "GET"
+path = "/toml"
+template = "toml.html"

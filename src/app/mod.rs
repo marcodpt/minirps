@@ -4,7 +4,7 @@ mod context;
 use std::error::Error;
 use std::collections::HashMap;
 use serde::Deserialize;
-use minijinja::{Environment, Value};
+use minijinja::{Environment};
 use axum::{
     response::Response,
     extract::{Path, Query, State, Request},
@@ -30,8 +30,8 @@ impl AppState {
     }
 
     pub async fn run (&self,
-        params: Value,
-        vars: Value,
+        params: HashMap<String, String>,
+        vars: HashMap<String, String>,
         request: Request
     ) -> Result<Response, Box<dyn Error>> {
         let context = Context::new(
@@ -41,10 +41,10 @@ impl AppState {
         let (body, state) = match tpl.render_and_return_state(&context) {
             Ok(result) => result,
             Err(err) => {
-                let mut info = format!("Could not render template: {:#}", err);
+                let mut info = format!("Fail to render template!\n{:#}", err);
                 let mut err = &err as &dyn Error;
                 while let Some(next_err) = err.source() {
-                    info = format!("{}\ncaused by: {:#}", info, next_err);
+                    info = format!("{}\n\n{:#}", info, next_err);
                     err = next_err;
                 }
                 return Err(info.into());
@@ -83,11 +83,10 @@ impl AppState {
 
 pub async fn handler (
     state: State<AppState>,
-    //Path(params): Path<Value>,
-    Query(vars): Query<Value>,
+    Path(params): Path<HashMap<String, String>>,
+    Query(vars): Query<HashMap<String, String>>,
     request: Request,
 ) -> Result<Response, (StatusCode, String)> {
-    let params = Value::from(0);
     match state.run(params, vars, request).await {
         Ok(response) => Ok(response),
         Err(err) => Err((StatusCode::INTERNAL_SERVER_ERROR, err.to_string()))

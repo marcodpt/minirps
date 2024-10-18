@@ -2,7 +2,7 @@
 {% block title %}Periodic Table{% endblock title %}
 {% block main %}
   <h1>Periodic Table</h1>
-  {% set rows = data.elements.json %}
+  {% set rows = read("/data.json") | parse %}
   <table>
     <tbody>
       {% for period in range(0, rows | map(attribute="Period")| max) %}
@@ -13,7 +13,7 @@
             <td>
               {% for row in rows %}
                 {% if row.Group == group + 1 and row.Period == period + 1 %}
-                  <a href="{{row.Symbol}}">{{row.Symbol}}</a>
+                  <a href="element/{{row.Symbol}}">{{row.Symbol}}</a>
                 {% endif %}
               {% endfor %}
             </td>

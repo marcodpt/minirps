@@ -1,8 +1,8 @@
 {% extends "base.html" %}
-{% block title %}Periodic Table{% endblock title %}
+{% block title %}({{params.element}}) Periodic Table{% endblock title %}
 {% block main %}
   <h1>Periodic Table</h1>
-  {% set rows = data.elements.json %}
+  {% set rows = read("/data.json") | parse %}
   <table>
     <thead>
       <tr>
