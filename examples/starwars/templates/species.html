@@ -2,7 +2,7 @@
 {% block title %}Species{% endblock title %}
 {% block main %}
   <h1>Star Wars Species</h1>
-  {% set rows = data.species.json.results %}
+  {% set data = get('https://swapi.dev/api/species/').body | parse %}
   <table>
     <thead>
       <tr>
@@ -21,7 +21,7 @@
       </tr>
     </thead>
     <tbody>
-      {% for row in rows %}
+      {% for row in data.results %}
         <tr>
           <td>{{row.name}}</td>
           <td>{{row.classification}}</td>

@@ -1,0 +1,36 @@
+{
+  "port": 3003,
+  "templates": "templates",
+  "assets": "assets",
+  "routes": [
+    {
+      "method": "GET",
+      "path": "/",
+      "template": "home.html"
+    }, {
+      "method": "GET",
+      "path": "/films",
+      "template": "films.html"
+    }, {
+      "method": "GET",
+      "path": "/people",
+      "template": "people.html"
+    }, {
+      "method": "GET",
+      "path": "/planets",
+      "template": "planets.html"
+    }, {
+      "method": "GET",
+      "path": "/species",
+      "template": "species.html"
+    }, {
+      "method": "GET",
+      "path": "/starships",
+      "template": "starships.html"
+    }, {
+      "method": "GET",
+      "path": "/vehicles",
+      "template": "vehicles.html"
+    }
+  ]
+}

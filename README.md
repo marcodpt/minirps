@@ -264,7 +264,7 @@ With https (self-signed certificate, needs to accept security risk in the
 browser.)
 
 ```
-minirps -f examples/starwars/config.toml \
+minirps -f examples/starwars/config.json \
   -k examples/certs/key.txt \
   -c examples/certs/cert.txt
 ```

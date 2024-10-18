@@ -2,7 +2,7 @@
 {% block title %}Films{% endblock title %}
 {% block main %}
   <h1>Star Wars Films</h1>
-  {% set rows = data.films.json.results %}
+  {% set data = get('https://swapi.dev/api/films/').body | parse %}
   <table>
     <thead>
       <tr>
@@ -19,7 +19,7 @@
       </tr>
     </thead>
     <tbody>
-      {% for row in rows %}
+      {% for row in data.results %}
         <tr>
           <td>{{row.title}}</td>
           <td>{{row.episode_id}}</td>

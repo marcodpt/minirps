@@ -2,7 +2,7 @@
 {% block title %}Planets{% endblock title %}
 {% block main %}
   <h1>Star Wars Planets</h1>
-  {% set rows = data.planets.json.results %}
+  {% set data = get('https://swapi.dev/api/planets/').body | parse %}
   <table>
     <thead>
       <tr>
@@ -20,7 +20,7 @@
       </tr>
     </thead>
     <tbody>
-      {% for row in rows %}
+      {% for row in data.results %}
         <tr>
           <td>{{row.name}}</td>
           <td>{{row.climate}}</td>

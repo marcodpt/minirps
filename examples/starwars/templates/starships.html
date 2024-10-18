@@ -2,7 +2,7 @@
 {% block title %}Starships{% endblock title %}
 {% block main %}
   <h1>Star Wars Starships</h1>
-  {% set rows = data.starships.json.results %}
+  {% set data = get('https://swapi.dev/api/starships/').body | parse %}
   <table>
     <thead>
       <tr>
@@ -24,7 +24,7 @@
       </tr>
     </thead>
     <tbody>
-      {% for row in rows %}
+      {% for row in data.results %}
         <tr>
           <td>{{row.name}}</td>
           <td>{{row.model}}</td>
