@@ -69,7 +69,7 @@ impl AppState {
                 }
             }
 
-            if let Some(headers) = state.lookup("headers") {
+            if let Some(headers) = state.lookup("set_headers") {
                 let headers = HashMap::<String, String>::deserialize(headers)?;
                 for (key, value) in headers.iter() {
                     response = response.header(key, value);

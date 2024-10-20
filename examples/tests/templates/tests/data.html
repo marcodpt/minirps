@@ -1,4 +1,4 @@
-{%- set data = get('http://localhost:4000/tests/data.json') -%}
+{#{%- set data = get('http://localhost:4000/tests/data.json') -%}#}
 {#{%- with data -%}#}
   {#{%- set json = body | parse("json") -%}#}
   {#{%- set body = body | parse("text") -%}#}
@@ -10,7 +10,7 @@
 {%- else -%}
 {%- set status = data.status -%}
 {%- endif -%}
-{#{%- set headers['Content-Type'] = headers['x-set-content'] -%}#}
+{%- set set_headers = {"Content-Type": headers['x-set-content']} -%}
 path: {{path}}
 query: {{query}}
 headers['content-type']: {{headers['content-type']}}
