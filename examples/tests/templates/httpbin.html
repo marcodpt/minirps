@@ -1,0 +1,14 @@
+{% set url = "https://httpbin.org/anything/"~params.id %}
+{% if query %}
+{% set url = url~"?"~query %}
+{% endif %}
+{% set
+  redirect = {
+    "method": method,
+    "url": url, 
+    "headers": {
+      "X-Set": "some-data",
+      "X-Var": vars.x
+    }
+  }
+%}
