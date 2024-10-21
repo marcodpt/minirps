@@ -44,6 +44,26 @@
       "method": "GET",
       "path": "/starwars/:resource",
       "template": "starwars.html"
+    }, {
+      "method": "GET",
+      "path": "/notes",
+      "template": "notes/read.html"
+    }, {
+      "method": "POST",
+      "path": "/notes",
+      "template": "notes/create.html"
+    }, {
+      "method": "GET",
+      "path": "/notes/:title",
+      "template": "notes/edit.html"
+    }, {
+      "method": "POST",
+      "path": "/notes/:title",
+      "template": "notes/update.html"
+    }, {
+      "method": "POST",
+      "path": "/notes/:title",
+      "template": "notes/delete.html"
     }
   ]
 }

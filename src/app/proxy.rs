@@ -7,35 +7,35 @@ use axum::response::Response;
 use reqwest::{Request, RequestBuilder, Client};
 
 #[derive(Deserialize)]
-pub struct Redirect {
+pub struct Proxy {
     method: Option<String>,
     url: String,
     headers: Option<HashMap<String, String>>,
     body: Option<Vec<u8>>
 }
 
-impl Redirect {
+impl Proxy {
     pub async fn new (
         method: &str,
         headers: &HashMap<String, String>,
         body: &Vec<u8>,
-        redirect: &Value
+        proxy: &Value
     ) -> Result<Response, Box<dyn Error>> {
-        let redirect = Redirect::deserialize(redirect)?;
-        let method = redirect.method.unwrap_or(method.to_string());
+        let proxy = Proxy::deserialize(proxy)?;
+        let method = proxy.method.unwrap_or(method.to_string());
 
         let mut r = RequestBuilder::from_parts(Client::new(),
-            Request::new(method.parse()?, redirect.url.parse()?)
+            Request::new(method.parse()?, proxy.url.parse()?)
         );
         for (key, value) in headers.iter() {
             r = r.header(key.clone(), value.clone());
         }
-        if let Some(headers) = redirect.headers {
+        if let Some(headers) = proxy.headers {
             for (key, value) in headers.iter() {
                 r = r.header(key, value);
             }
         }
-        let result = r.body(redirect.body.unwrap_or(body.to_vec()))
+        let result = r.body(proxy.body.unwrap_or(body.to_vec()))
             .send().await?;
 
         let mut response = Response::builder()

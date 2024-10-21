@@ -1,17 +1,18 @@
-mod redirect;
 mod context;
+mod proxy;
+mod modify;
 
 use std::error::Error;
 use std::collections::HashMap;
-use serde::Deserialize;
 use minijinja::{Environment};
 use axum::{
     response::Response,
     extract::{Path, Query, State, Request},
     http::StatusCode
 };
-use redirect::Redirect;
 use context::Context;
+use proxy::Proxy;
+use modify::Modify;
 use crate::config::Route;
 
 type Env = Environment<'static>;
@@ -51,28 +52,29 @@ impl AppState {
             }
         };
 
-        if let Some(redirect) = state.lookup("redirect") {
-            Redirect::new(
+        if let Some(proxy) = state.lookup("proxy") {
+            Proxy::new(
                 &context.method,
                 &context.headers,
                 &context.body,
-                &redirect
+                &proxy
             ).await
         } else {
             let mut response = Response::builder()
                 .status(200)
                 .header("content-type", "text/html");
 
-            if let Some(status) = state.lookup("status") {
-                if let Ok(status) = u16::try_from(status) {
-                    response = response.status(status);
-                }
-            }
+            if let Some(modify) = state.lookup("modify") {
+                if let Ok(modify) = Modify::new(&modify) {
+                    if let Some(status) = modify.status {
+                        response = response.status(status);
+                    }
 
-            if let Some(headers) = state.lookup("set_headers") {
-                let headers = HashMap::<String, String>::deserialize(headers)?;
-                for (key, value) in headers.iter() {
-                    response = response.header(key, value);
+                    if let Some(headers) = modify.headers {
+                        for (key, value) in headers.iter() {
+                            response = response.header(key, value);
+                        }
+                    }
                 }
             }
 
