@@ -1,0 +1,25 @@
+# minirps -f config.toml
+
+port = 8081
+assets = "assets"
+templates = "templates"
+
+[[routes]]
+method = "GET"
+path = "/"
+template = "index.html"
+
+[[routes]]
+method = "GET"
+path = "/form"
+template = "form.html"
+
+[[routes]]
+method = "GET"
+path = "/debug/:name"
+template = "debug.html"
+
+[[routes]]
+method = "POST"
+path = "/debug/:name"
+template = "debug.html"

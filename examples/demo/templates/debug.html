@@ -64,7 +64,17 @@
     </tr>
     <tr>
       <th>Body</th>
-      <td>{{body | parse("text")}}</td>
+      <td>
+        <table>
+          {% set data = body | parse %}
+          {% for name in data | list %}
+            <tr>
+              <th>{{name}}</th>
+              <td>{{data[name]}}</td>
+            </tr>
+          {% endfor %}
+        </table>
+      </td>
     </tr>
   </table>
 {% endblock main %}

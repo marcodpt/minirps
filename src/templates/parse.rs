@@ -1,4 +1,5 @@
 use serde_json;
+use serde_urlencoded;
 use toml;
 use std::str::from_utf8;
 use minijinja::{Error, ErrorKind::InvalidOperation, Value};
@@ -18,12 +19,23 @@ pub fn parse (
     };
 
     match encoding {
+        Some("form") => {
+            match serde_urlencoded::from_str::<Value>(text) {
+                Ok(value) => Ok(value),
+                Err(err) => Err(Error::new(
+                    InvalidOperation,
+                    format!("Failed to parse from Form Data!\n{}",
+                        err.to_string()
+                    )
+                ))
+            }
+        },
         Some("json") => {
             match serde_json::from_str::<Value>(text) {
                 Ok(value) => Ok(value),
                 Err(err) => Err(Error::new(
                     InvalidOperation,
-                    format!("Failed to parse to JSON!\n{}", err.to_string())
+                    format!("Failed to parse from JSON!\n{}", err.to_string())
                 ))
             }
         },
@@ -32,7 +44,7 @@ pub fn parse (
                 Ok(value) => Ok(value),
                 Err(err) => Err(Error::new(
                     InvalidOperation,
-                    format!("Failed to parse to TOML!\n{}", err.to_string())
+                    format!("Failed to parse from TOML!\n{}", err.to_string())
                 ))
             }
         },
@@ -43,7 +55,8 @@ pub fn parse (
             InvalidOperation,
             format!("{} encoding not implemented!", encoding)
         )),
-        None => match serde_json::from_str::<Value>(text) 
+        None => match serde_urlencoded::from_str::<Value>(text)
+            .or(serde_json::from_str::<Value>(text))
             .or(toml::from_str::<Value>(text))
         {
             Ok(value) => Ok(value),
