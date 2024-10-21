@@ -60,10 +60,6 @@
       "method": "POST",
       "path": "/notes/:title",
       "template": "notes/update.html"
-    }, {
-      "method": "POST",
-      "path": "/notes/:title",
-      "template": "notes/delete.html"
     }
   ]
 }

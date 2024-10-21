@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}Notes - {% endblock title %}
+{% block main %}
+  <h1>Notes taking app</h1>
+  {% set dir = read('notes') %}
+  {% for note in dir %}
+    <h2>{{note.name}}</h2>
+    <pre><p>{{read('notes/'~note.name) | parse("text")}}</p></pre>
+  {% endfor %}
+  <form method="POST">
+    <label for="title">Title</label>
+    <input
+      type="text"
+      name="title"
+      id="title"
+      placeholder="The title of the note"
+      required=""
+      minlen="1"
+    >
+    <label for="content">Content</label>
+    <textarea
+      name="content"
+      id="content"
+      placeholder="Type something..."
+    ></textarea>
+    <button type="reset">Clear</button>
+    <button type="submit">Save</button>
+  </form>
+{% endblock main %}

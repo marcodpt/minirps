@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}Notes Create - {% endblock title %}
+{% block main %}
+  {%- set data = body | parse("form") -%}
+  {%- set error = write('notes/'~data.title, data.content | bytes) -%}
+  {% if not error %}
+    {%- set modify = {
+      "status": 201,
+      "location": "/notes"
+    } -%}
+  {% else %}
+    <h1>Error creating note!</h1>
+    <pre><code>{{error}}</code></pre>
+  {% endif %}
+{% endblock main %}
