@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}Home - {% endblock title %}
+{% block main %}
+  <h1>Home</h1>
+  <ul>
+    <li>
+      <a href="/debug/GET?x=3&y=2&y=4&z[]=5&z[]=7#me">
+        Debug GET
+      </a>
+    </li>
+    <li>
+      <a href="/form">
+        Send GET
+      </a>
+    </li>
+    <li>
+      <a href="/form?method=POST">
+        Send POST
+      </a>
+    </li>
+  </ul>
+{% endblock main %}

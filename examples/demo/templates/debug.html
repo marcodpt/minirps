@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% block title %}Debug {{params.name}} - {% endblock title %}
+{% block main %}
+  <h1>Debug {{params.name}}</h1>
+  <table>
+    <tr>
+      <th>Method</th>
+      <td>{{method}}</td>
+    </tr>
+    <tr>
+      <th>Headers</th>
+      <td>
+        <table>
+          {% for name in headers | list %}
+            <tr>
+              <th>{{name}}</th>
+              <td>{{headers[name]}}</td>
+            </tr>
+          {% endfor %}
+        </table>
+      </td>
+    </tr>
+    <tr>
+      <th>URL</th>
+      <td>{{url}}</td>
+    </tr>
+    <tr>
+      <th>Route</th>
+      <td>{{route}}</td>
+    </tr>
+    <tr>
+      <th>Path</th>
+      <td>{{path}}</td>
+    </tr>
+    <tr>
+      <th>Params</th>
+      <td>
+        <table>
+          {% for name in params | list %}
+            <tr>
+              <th>{{name}}</th>
+              <td>{{params[name]}}</td>
+            </tr>
+          {% endfor %}
+        </table>
+      </td>
+    </tr>
+    <tr>
+      <th>Query</th>
+      <td>{{query}}</td>
+    </tr>
+    <tr>
+      <th>Vars</th>
+      <td>
+        <table>
+          {% for name in vars | list %}
+            <tr>
+              <th>{{name}}</th>
+              <td>{{vars[name]}}</td>
+            </tr>
+          {% endfor %}
+        </table>
+      </td>
+    </tr>
+    <tr>
+      <th>Body</th>
+      <td>{{body | parse("text")}}</td>
+    </tr>
+  </table>
+{% endblock main %}
