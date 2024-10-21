@@ -2,7 +2,7 @@
 {% block title %}CLI - {% endblock title %}
 {% block main %}
   <h1>Command Line</h1>
-  {% set data = body | parse %}
+  {% set data = body | parse("form") %}
   <form method="POST">
     <input
       type="text"

@@ -6,11 +6,11 @@ use toml;
 pub fn format (
     value: &Value,
     encoding: &str
-) -> Result<Vec<u8>, Error> {
+) -> Result<String, Error> {
     match encoding {
         "form" => {
             match serde_urlencoded::to_string::<Value>(value.clone().into()) {
-                Ok(data) => Ok(data.as_bytes().to_vec()),
+                Ok(data) => Ok(data),
                 Err(err) => Err(Error::new(
                     InvalidOperation,
                     format!("Unable to format Form Data!\n{:#}", err)
@@ -19,7 +19,7 @@ pub fn format (
         },
         "json" => {
             match serde_json::to_string_pretty(value.into()) {
-                Ok(data) => Ok(data.as_bytes().to_vec()),
+                Ok(data) => Ok(data),
                 Err(err) => Err(Error::new(
                     InvalidOperation,
                     format!("Unable to format JSON!\n{:#}", err)
@@ -28,7 +28,7 @@ pub fn format (
         },
         "toml" => {
             match toml::to_string_pretty(value.into()) {
-                Ok(data) => Ok(data.as_bytes().to_vec()),
+                Ok(data) => Ok(data),
                 Err(err) => Err(Error::new(
                     InvalidOperation,
                     format!("Unable to format TOML!\n{:#}", err)
@@ -36,17 +36,7 @@ pub fn format (
             }
         },
         "debug" => {
-            Ok(format!("{:#?}", value).as_bytes().to_vec())
-        },
-        "raw" => {
-            if let Some(data) = value.as_bytes() {
-                Ok(data.to_vec())
-            } else {
-                Err(Error::new(
-                    InvalidOperation,
-                    format!("Data cannot be converted to bytes!")
-                ))
-            }
+            Ok(format!("{:#?}", value))
         },
         encoding => {
             Err(Error::new(
@@ -55,4 +45,8 @@ pub fn format (
             ))
         }
     }
+}
+
+pub fn bytes (text: &str) -> Vec<u8> {
+    text.as_bytes().to_vec()
 }

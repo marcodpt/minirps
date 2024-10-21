@@ -7,7 +7,7 @@ mod format;
 use std::error::Error;
 use minijinja::{Environment, path_loader, Value};
 use parse::parse;
-use format::format;
+use format::{format, bytes};
 use command::command;
 use file::IO;
 use fetch::{get, delete, head, options, post, put, patch};
@@ -23,6 +23,7 @@ pub fn new (
 
     env.add_filter("parse", parse);
     env.add_filter("format", format);
+    env.add_filter("bytes", bytes);
     env.add_function("command", command);
     if let Some(data) = data {
         let io1 = IO::new(data)?;

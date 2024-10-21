@@ -6,7 +6,7 @@ use minijinja::{Error, ErrorKind::InvalidOperation, Value};
 
 pub fn parse (
     data: Vec<u8>,
-    encoding: Option<&str>
+    encoding: &str
 ) -> Result<Value, Error> {
     let text = match from_utf8(&data) {
         Ok(text) => text,
@@ -19,7 +19,7 @@ pub fn parse (
     };
 
     match encoding {
-        Some("form") => {
+        "form" => {
             match serde_urlencoded::from_str::<Value>(text) {
                 Ok(value) => Ok(value),
                 Err(err) => Err(Error::new(
@@ -30,7 +30,7 @@ pub fn parse (
                 ))
             }
         },
-        Some("json") => {
+        "json" => {
             match serde_json::from_str::<Value>(text) {
                 Ok(value) => Ok(value),
                 Err(err) => Err(Error::new(
@@ -39,7 +39,7 @@ pub fn parse (
                 ))
             }
         },
-        Some("toml") => {
+        "toml" => {
             match toml::from_str::<Value>(text) {
                 Ok(value) => Ok(value),
                 Err(err) => Err(Error::new(
@@ -48,19 +48,12 @@ pub fn parse (
                 ))
             }
         },
-        Some("text") => {
+        "text" => {
             Ok(Value::from(text))
         },
-        Some(encoding) => Err(Error::new(
+        encoding => Err(Error::new(
             InvalidOperation,
             format!("{} encoding not implemented!", encoding)
-        )),
-        None => match serde_urlencoded::from_str::<Value>(text)
-            .or(serde_json::from_str::<Value>(text))
-            .or(toml::from_str::<Value>(text))
-        {
-            Ok(value) => Ok(value),
-            Err(_) => Ok(Value::from(text))
-        }
+        ))
     }
 }

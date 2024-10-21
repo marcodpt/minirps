@@ -3,7 +3,7 @@
 {% block main %}
   <h1>Periodic Table (JSON)</h1>
   {% if vars.enc %}
-    {% set data = read("/chemistry.json") | parse("json") | format(vars.enc) | parse("text") %}
+    {% set data = read("/chemistry.json") | parse("json") | format(vars.enc) %}
   {% else %}
     {% set data = read("/chemistry.json") | parse("text") %}
   {% endif %}
