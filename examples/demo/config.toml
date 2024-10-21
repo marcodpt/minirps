@@ -49,3 +49,8 @@ template = "chemistry/element.html"
 method = "GET"
 path = "/chemistry/data"
 template = "chemistry/data.html"
+
+[[routes]]
+method = "GET"
+path = "/starwars/:resource"
+template = "starwars.html"

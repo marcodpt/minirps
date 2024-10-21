@@ -40,6 +40,10 @@
       "method": "GET",
       "path": "/chemistry/data",
       "template": "chemistry/data.html"
+    }, {
+      "method": "GET",
+      "path": "/starwars/:resource",
+      "template": "starwars.html"
     }
   ]
 }

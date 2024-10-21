@@ -1,0 +1,88 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema",
+  "title": "Vehicle",
+  "description": "A vehicle.",
+  "type": "object",
+  "properties": {
+    "name": {
+      "title": "Name",
+      "type": "string",
+      "description": "The name of this vehicle. The common name, such as Sand Crawler."
+    },
+    "model": {
+      "title": "Model",
+      "type": "string",
+      "description": "The model or official name of this vehicle. Such as All Terrain Attack Transport."
+    },
+    "manufacturer": {
+      "title": "Manufacturer",
+      "type": "string",
+      "description": "The manufacturer of this vehicle. Comma seperated if more than one."
+    },
+    "vehicle_class": {
+      "title": "Class",
+      "type": "string",
+      "description": "The class of this vehicle, such as Wheeled."
+    },
+    "passengers": {
+      "title": "Passengers",
+      "type": "string",
+      "description": "The number of non-essential people this vehicle can transport."
+    },
+    "crew": {
+      "title": "Crew",
+      "type": "string",
+      "description": "The number of personnel needed to run or pilot this vehicle."
+    },
+    "length": {
+      "title": "Length (m)",
+      "type": "string",
+      "description": "The length of this vehicle in meters."
+    },
+    "cost_in_credits": {
+      "title": "Cost (credits)",
+      "type": "string",
+      "description": "The cost of this vehicle new, in galactic credits."
+    },
+    "cargo_capacity": {
+      "title": "Capacity (Kg)",
+      "type": "string",
+      "description": "The maximum number of kilograms that this vehicle can transport."
+    },
+    "consumables": {
+      "title": "Consumables",
+      "type": "string",
+      "description": "The maximum length of time that this vehicle can provide consumables for its entire crew without having to resupply."
+    },
+    "max_atmosphering_speed": {
+      "title": "Max ATM speed",
+      "type": "string",
+      "description": "The maximum speed of this vehicle in atmosphere."
+    },
+    "films": {
+      "title": "Films",
+      "type": "array",
+      "description": "An array of Film URL Resources that this vehicle has appeared in."
+    },
+    "pilots": {
+      "title": "Pilots",
+      "type": "array",
+      "description": "An array of People URL Resources that this vehicle has been piloted by."
+    }
+  },
+  "required": [
+    "name",
+    "model",
+    "manufacturer",
+    "vehicle_class",
+    "passengers",
+    "crew",
+    "length",
+    "cost_in_credits",
+    "cargo_capacity",
+    "consumables",
+    "max_atmosphering_speed",
+    "films",
+    "pilots"
+  ]
+}

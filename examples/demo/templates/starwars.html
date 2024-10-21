@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}{{params.resource}} - {% endblock title %}
+{% block main %}
+  {% set dir = read('starwars') %}
+  {% set schema = read('/starwars/'~params.resource~'.json') | parse("json") %}
+  {% set P = schema.properties %}
+  {% set data = get('https://swapi.dev/api/'~params.resource).body | parse("json") %}
+  <h1 title="{{schema.description}}">Star Wars {{schema.title}}</h1>
+  <nav>
+    {% for file in dir %}
+      {% set name = file.name | split(".") | first %}
+      <a href="{{name}}">{{name}}</a>
+      {% if not loop.last %}
+        |
+      {% endif %}
+    {% endfor %}
+  </nav>
+  {% for row in data.results %}
+    <table>
+      {% for key in schema.required %}
+        <tr>
+          <th title="{{P[key].description}}">
+            {{P[key].title}}
+          </th>
+          <td>
+            {% if P[key].type != "array" %}
+              {{row[key]}}
+            {% else %}
+              {{row[key] | length}}
+            {% endif %}
+          </td>
+        </tr>
+      {% endfor %}
+    </table>
+    <br>
+    <hr>
+    <br>
+  {% endfor %}
+{% endblock main %}

@@ -1,0 +1,82 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema",
+  "title": "People",
+  "description": "A person within the Star Wars universe",
+  "type": "object",
+  "properties": {
+    "name": {
+      "title": "Name",
+      "type": "string",
+      "description": "The name of this person."
+    },
+    "birth_year": {
+      "title": "Birth (Y)",
+      "type": "string",
+      "description": "The birth year of this person. BBY (Before the Battle of Yavin) or ABY (After the Battle of Yavin)."
+    },
+    "gender": {
+      "title": "Gender",
+      "type": "string",
+      "description": "The gender of this person (if known)."
+    },
+    "height": {
+      "title": "Height (m)",
+      "type": "string",
+      "description": "The height of this person in meters."
+    },
+    "mass": {
+      "title": "Mass (Kg)",
+      "type": "string",
+      "description": "The mass of this person in kilograms."
+    },
+    "eye_color": {
+      "title": "Eye Color",
+      "type": "string",
+      "description": "The eye color of this person."
+    },
+    "hair_color": {
+      "title": "Hair Color",
+      "type": "string",
+      "description": "The hair color of this person."
+    },
+    "skin_color": {
+      "title": "Skin Color",
+      "type": "string",
+      "description": "The skin color of this person."
+    },
+    "films": {
+      "title": "Films",
+      "type": "array",
+      "description": "An array of urls of film resources that this person has been in."
+    },
+    "species": {
+      "title": "Species",
+      "type": "array",
+      "description": "The url of the species resource that this person is."
+    },
+    "starships": {
+      "title": "Starships",
+      "type": "array",
+      "description": "An array of starship resources that this person has piloted"
+    },
+    "vehicles": {
+      "title": "Vehicles",
+      "type": "array",
+      "description": "An array of vehicle resources that this person has piloted"
+    }
+  },
+  "required": [
+    "name",
+    "birth_year",
+    "gender",
+    "height",
+    "mass",
+    "eye_color",
+    "hair_color",
+    "skin_color",
+    "films",
+    "species",
+    "starships",
+    "vehicles"
+  ]
+}

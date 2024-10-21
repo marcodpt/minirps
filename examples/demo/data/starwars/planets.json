@@ -1,0 +1,76 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema",
+  "title": "Planet",
+  "description": "A planet.",
+  "type": "object",
+  "properties": {
+    "name": {
+      "title": "Name",
+      "type": "string",
+      "description": "The name of this planet."
+    },
+    "climate": {
+      "title": "Climate",
+      "type": "string",
+      "description": "The climate of this planet. Comma-seperated if diverse."
+    },
+    "terrain": {
+      "title": "Terrain",
+      "type": "string",
+      "description": "the terrain of this planet. Comma-seperated if diverse."
+    },
+    "population": {
+      "title": "Population",
+      "type": "string",
+      "description": "The average population of sentient beings inhabiting this planet."
+    },
+    "diameter": {
+      "title": "Diameter (Km)",
+      "type": "string",
+      "description": "The diameter of this planet in kilometers."
+    },
+    "gravity": {
+      "title": "Gravity (g)",
+      "type": "string",
+      "description": "A number denoting the gravity of this planet. Where 1 is normal."
+    },
+    "orbital_period": {
+      "title": "Orbital Period (days)",
+      "type": "string",
+      "description": "The number of standard days it takes for this planet to complete a single orbit of its local star."
+    },
+    "rotation_period": {
+      "title": "Rotation Period (hours)",
+      "type": "string",
+      "description": "The number of standard hours it takes for this planet to complete a single rotation on its axis."
+    },
+    "surface_water": {
+      "title": "Surface Water (%)",
+      "type": "string",
+      "description": "The percentage of the planet surface that is naturally occuring water or bodies of water."
+    },
+    "films": {
+      "title": "Films",
+      "type": "array",
+      "description": "An array of Film URL Resources that this planet has appeared in."
+    },
+    "residents": {
+      "title": "Residents",
+      "type": "array",
+      "description": "An array of People URL Resources that live on this planet."
+    }
+  },
+  "required": [
+      "name",
+      "climate",
+      "terrain",
+      "population",
+      "diameter",
+      "gravity",
+      "orbital_period",
+      "rotation_period",
+      "surface_water",
+      "films",
+      "residents"
+  ]
+}
