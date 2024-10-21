@@ -1,6 +1,7 @@
 {
   "port": 8080,
   "assets": "assets",
+  "data": "data",
   "templates": "templates",
   "routes": [
     {
@@ -27,6 +28,18 @@
       "method": "POST",
       "path": "/cli",
       "template": "cli.html"
+    }, {
+      "method": "GET",
+      "path": "/chemistry",
+      "template": "chemistry/table.html"
+    }, {
+      "method": "GET",
+      "path": "/chemistry/:element",
+      "template": "chemistry/element.html"
+    }, {
+      "method": "GET",
+      "path": "/chemistry/data",
+      "template": "chemistry/data.html"
     }
   ]
 }

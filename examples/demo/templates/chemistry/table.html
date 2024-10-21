@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}Periodic Table - {% endblock title %}
+{% block main %}
+  <h1>Periodic Table</h1>
+  {% set data = read("/chemistry.json") | parse("json") %}
+  {% set table = data.elements %}
+  <table>
+    <tbody>
+      {% for period in range(0, table | map(attribute="Period")| max) %}
+        <tr>
+          {% for group in range(0, table | map(attribute="Group")| max) %}
+            <td>
+              {% for el in table %}
+                {% if el.Group == group + 1 and el.Period == period + 1 %}
+                  <a href="chemistry/{{el.Symbol}}">{{el.Symbol}}</a>
+                {% endif %}
+              {% endfor %}
+            </td>
+          {% endfor %}
+        </tr>
+      {% endfor %}
+    </tbody>
+    <tfoot>
+      <tr>
+        <td colspan="4">
+          <a href="chemistry/data">Raw Data</a>
+        </td>
+        <td colspan="4">
+          <a href="chemistry/data?enc=json">JSON</a>
+        </td>
+        <td colspan="4">
+          <a href="chemistry/data?enc=toml">TOML</a>
+        </td>
+      </tr>
+    </tfoot>
+  </table>
+{% endblock main %}

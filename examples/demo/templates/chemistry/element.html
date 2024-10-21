@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}({{params.element}}) Periodic Table - {% endblock title %}
+{% block main %}
+  {% set data = read("/chemistry.json") | parse("json") %}
+  {% for el in data.elements %}
+    {% if el.Symbol == params.element %}
+      <h1>{{el.EnglishName}} ({{el.Symbol}})</h1>
+      <table>
+        <tr>
+          <th>#</th>
+          <td>{{el.AtomicNumber}}</td>
+        </tr>
+        <tr>
+          <th>Symbol</th>
+          <td>{{el.Symbol}}</td>
+        </tr>
+        <tr>
+          <th>Name</th>
+          <td>{{el.EnglishName}}</td>
+        </tr>
+        <tr>
+          <th>Configuration</th>
+          <td>{{el.Configuration}}</td>
+        </tr>
+        <tr>
+          <th>Discovery</th>
+          <td>{{el.Discovery}}</td>
+        </tr>
+        <tr>
+          <th>Discovered By</th>
+          <td>{{el.DiscoveredBy}}</td>
+        </tr>
+      </table>
+    {% endif %}
+  {% endfor %}
+{% endblock main %}

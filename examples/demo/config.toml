@@ -2,6 +2,7 @@
 
 port = 8081
 assets = "assets"
+data = "data"
 templates = "templates"
 
 [[routes]]
@@ -23,3 +24,28 @@ template = "debug.html"
 method = "POST"
 path = "/debug/:name"
 template = "debug.html"
+
+[[routes]]
+method = "GET"
+path = "/cli"
+template = "cli.html"
+
+[[routes]]
+method = "POST"
+path = "/cli"
+template = "cli.html"
+
+[[routes]]
+method = "GET"
+path = "/chemistry"
+template = "chemistry/table.html"
+
+[[routes]]
+method = "GET"
+path = "/chemistry/:element"
+template = "chemistry/element.html"
+
+[[routes]]
+method = "GET"
+path = "/chemistry/data"
+template = "chemistry/data.html"
