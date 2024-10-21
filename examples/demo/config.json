@@ -19,6 +19,14 @@
       "method": "POST",
       "path": "/debug/:name",
       "template": "debug.html"
+    }, {
+      "method": "GET",
+      "path": "/cli",
+      "template": "cli.html"
+    }, {
+      "method": "POST",
+      "path": "/cli",
+      "template": "cli.html"
     }
   ]
 }

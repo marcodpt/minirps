@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}CLI - {% endblock title %}
+{% block main %}
+  <h1>Command Line</h1>
+  {% set data = body | parse %}
+  <form method="POST">
+    <input
+      type="text"
+      name="command"
+      placeholder="ls -l"
+      value="{{data.command}}"
+    >
+  </form>
+  {% if data and data.command %}
+    {% set res = command(data.command) %}
+    <h2>Status Code: {{res.code}}</h2>
+    <h2>Output</h2>
+    <pre><code>{{res.stdout | parse("text")}}</code></pre>
+    <h2>Error</h2>
+    <pre><code>{{res.stderr | parse("text")}}</code></pre>
+  {% endif %}
+{% endblock main %}
