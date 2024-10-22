@@ -18,7 +18,7 @@ pub fn command(command: String) -> Value {
                 stdout: format!(
                     "Fail to execute command!"
                 ).as_bytes().to_vec(),
-                stderr: format!("{:#?}", err).as_bytes().to_vec()
+                stderr: err.to_string().as_bytes().to_vec()
             });
         }
     };

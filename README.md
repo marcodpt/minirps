@@ -8,13 +8,28 @@ Mini [reverse proxy](https://en.wikipedia.org/wiki/Reverse_proxy) server
 written in rust
 
 ## ❤️ Features
- - Very fast single standalone binary.
- - Static file server
- - [Reverse proxy](https://en.wikipedia.org/wiki/Reverse_proxy) router
+ - Static file server based on [axum](https://github.com/tokio-rs/axum).
  - HTTPS
  - [CORS](https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS)
- - Consume any API data and create custom responses with [minijinja](https://github.com/mitsuhiko/minijinja) templates
- - Extensively tested with [hurl](https://github.com/Orange-OpenSource/hurl)
+ - The optional configuration file can be written in
+[JSON](https://www.json.org/json-en.html) or
+[TOML](https://toml.io/en/).
+ - [minijinja](https://github.com/mitsuhiko/minijinja) templates with custom
+functions:
+   - read, write and remove files from the filesystem. 
+   - Send http requests in the template.
+   - Execute commands in the template.
+   - [Reverse proxy](https://en.wikipedia.org/wiki/Reverse_proxy). 
+   - Modify the response headers and status in the template.
+   - Parse and format to in the template to:
+     - [JSON](https://www.json.org/json-en.html)
+     - [TOML](https://toml.io/en/)
+     - [FormData](https://developer.mozilla.org/en-US/docs/Web/HTTP/Methods/POST)
+ - Safe rust and good code organization.
+ - No panics after startup (Every panic is a bug).
+ - Extensively tested with [hurl](https://github.com/Orange-OpenSource/hurl).
+ - Good debugging experience with the server displaying requests in the
+terminal and error messages in templates for humans.
  - Designed following the principles of
 [UNIX philosophy](https://en.wikipedia.org/wiki/Unix_philosophy).
 
@@ -27,6 +42,7 @@ Alternatively you can use one of the precompiled binaries available with each
 release (currently generic Linux only).
 
 ## 🎮 Usage
+### Help
 ```
 minirps -h
 ```
@@ -66,136 +82,17 @@ minirps -p 4000 path/to/static/folder -c path/to/cert.pem -k path/to/key.pem
 minirps -o -p 4000 path/to/static/folder -c path/to/cert.pem -k path/to/key.pem
 ```
 
-### Start the server with a config.toml file
-Here the limit of possible configurations passed by command line has been reached.
-
-To create more complex and interesting examples we need a `config.toml` file
+### Start the server with a config file
+The supported formats are JSON and TOML.
 ```
-minirps -f path/to/config.toml
-```
-
-### Ignore any markdown files and files starting with secret\_ in the root folder
-config.toml
-```toml
-assets = "path/to/static/folder"
-port = 4000
-cert = "path/to/cert.pem"
-key = "path/to/key.pem"
-ignore = [
-  "/**/*.md",
-  "/secret_*"
-]
-```
-
-### Allow [CORS](https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS) for my website
-config.toml
-```toml
-assets = "path/to/static/folder"
-port = 4000
-cert = "path/to/cert.pem"
-key = "path/to/key.pem"
-cors = [
-  "https://www.my-website.com"
-]
-```
-
-### Allow [CORS](https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS) from my websites of varying origins 
-config.toml
-```toml
-assets = "path/to/static/folder"
-port = 4000
-cert = "path/to/cert.pem"
-key = "path/to/key.pem"
-cors = [
-  "http://www.my-website.com",
-  "https://www.my-website.com",
-  "http://www.my-other-website.com",
-  "https://www.my-other-website.com"
-]
-```
-
-### Allow [CORS](https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS) from all origins
-config.toml
-```toml
-assets = "path/to/static/folder"
-port = 4000
-cert = "path/to/cert.pem"
-key = "path/to/key.pem"
-cors = []
-```
-
-### Add a [reverse proxy](https://en.wikipedia.org/wiki/Reverse_proxy) to an API server running at http://localhost:8000 
-config.toml
-```toml
-assets = "path/to/static/folder"
-port = 4000
-cert = "path/to/cert.pem"
-key = "path/to/key.pem"
-cors = []
-
-# GET https://localhost:4000/api/users => GET http://localhost:8000/users
-[[routes]]
-method = "GET"
-path = "/api/users"
-
-[[routes.requests]]
-method = "GET"
-url = "http://localhost:8000/users"
-
-# PUT https://localhost:4000/api/users/21 => PUT http://localhost:8000/users/21
-[[routes]]
-method = "PUT"
-path = "/api/users/:id"
-
-[[routes.requests]]
-method = "PUT"
-url = "http://localhost:8000/users/{{params.id}}"
-body = "{{body}}"
-```
-
-### Send a plain text response instead of the API response
-config.toml
-```toml
-assets = "path/to/static/folder"
-port = 4000
-cert = "path/to/cert.pem"
-key = "path/to/key.pem"
-cors = []
-
-# GET https://localhost:4000/api/users => GET http://localhost:8000/users
-[[routes]]
-method = "GET"
-path = "/api/users"
-
-[[routes.requests]]
-name = "users"
-method = "GET"
-url = "http://localhost:8000/users"
-
-[routes.response]
-body = """
-{% for user in data.users.json %}
-  {{user.name}}
-{% endfor %}"""
-headers = { Content-Type = "text/plain" }
-
-# PUT https://localhost:4000/api/users/21 => PUT http://localhost:8000/users/21
-[[routes]]
-method = "PUT"
-path = "/api/users/:id"
-
-[[routes.requests]]
-name = "result"
-method = "PUT"
-url = "http://localhost:8000/users/{{params.id}}"
-body = "{{body}}"
-
-[routes.response]
-body = "{% if data.result.status == 200 %}SUCCESS!{% else %}ERROR!{% endif %}"
-headers = { Content-Type = "text/plain" }
+minirps -f path/to/config/file
 ```
 
 ### Send HTML template response instead of API response
+Here it is assumed that there are
+[minijinja](https://github.com/mitsuhiko/minijinja) templates `users.html`
+and `edit_user.html`
+
 config.toml
 ```toml
 templates = "path/to/templates/folder"
@@ -205,86 +102,67 @@ cert = "path/to/cert.pem"
 key = "path/to/key.pem"
 cors = []
 
-# GET https://localhost:4000/api/users => GET http://localhost:8000/users
 [[routes]]
 method = "GET"
 path = "/api/users"
+template = "users.html"
 
-[[routes.requests]]
-name = "users"
-method = "GET"
-url = "http://localhost:8000/users"
-
-[routes.response]
-body = "{% include 'users.html' %}"
-headers = { Content-Type = "text/html" }
-
-# PUT https://localhost:4000/api/users/21 => PUT http://localhost:8000/users/21
 [[routes]]
-method = "PUT"
+method = "GET"
 path = "/api/users/:id"
+template = "edit_user.html"
 
-[[routes.requests]]
-name = "result"
-method = "PUT"
-url = "http://localhost:8000/users/{{params.id}}"
-body = "{{body}}"
+[[routes]]
+method = "POST"
+path = "/api/users/:id"
+template = "edit_user.html"
+```
 
-[routes.response]
-body = "{% include 'edit.html' %}"
-headers = { Content-Type = "text/html" }
+Alternatively you can use a JSON file
+
+config.json
+```json
+{
+  "templates": "path/to/templates/folder",
+  "assets": "path/to/static/folder",
+  "port": 4000,
+  "cert": "path/to/cert.pem",
+  "key": "path/to/key.pem",
+  "cors": [],
+  "routes": [
+    {
+      "method": "GET",
+      "path": "/api/users",
+      "template": "users.html"
+    }, {
+      "method": "GET",
+      "path": "/api/users/:id",
+      "template": "edit_user.html"
+    }, {
+      "method": "POST",
+      "path": "/api/users/:id",
+      "template": "edit_user.html"
+    }
+  ]
+}
 ```
 
 ## 💯 Examples
 
-### Command Line
-In this example we show the use of the command line through a
+### Demo
+```
+minirps -f examples/demo/config.toml
+minirps -f examples/demo/config.json
+```
+
+Here it was implemented:
+ - Command Line: use of the command line through a
 [minijinja](https://github.com/mitsuhiko/minijinja) custom function.
-
-```
-minirps -f examples/command_line/config.toml
-```
-
-### Periodic Table
-In this example, a periodic table was created using local data.
-
-```
-minirps -f examples/periodic_table/config.toml
-```
-
-### Star Wars API
-In this example [minijinja](https://github.com/mitsuhiko/minijinja) templates
-were used to consume data from [swapi's](https://swapi.dev/) Star Wars API.
-
-```
-minirps -f examples/starwars/config.toml
-```
-
-With https (self-signed certificate, needs to accept security risk in the
-browser.)
-
-```
-minirps -f examples/starwars/config.json \
-  -k examples/certs/key.txt \
-  -c examples/certs/cert.txt
-```
-
-In any example it is possible to add https.
-
-### Static Server with CORS
-In this example, a static server was created and also a
-[CORS](https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS)
-request as a showcase.
-
-Static server
-```
-minirps examples/tests/assets
-```
-
-[CORS](https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS) server
-```
-minirps examples/tests/assets -o -p 4000
-```
+ - Periodic Table: A periodic table web interface was built from a JSON file.
+ - Star Wars API: Web interface for [swapi](https://swapi.dev/) Star Wars API.
+ - Note taking app: An example using the file system to save and read data.
+ - Form Data: Sending and reading examples.
+ - CORS: A working demo of a CORS request, needs both servers running. 
 
 ### test
 In this example, a static server and some routes are built to test the use of
@@ -299,13 +177,15 @@ minirps -f examples/tests/config.toml
 hurl --test examples/tests/test.hurl
 ```
 
+## 📢 Motivation
+
 ## 📖 Docs
-### config.toml
+### config
 Command line arguments take priority over config file if both are present.  
 
 Command line argument paths are relative to the current working directory.
 
-`config.toml` paths are relative to your own directory.
+`config` paths are relative to your own directory.
 
 Currently, any changes to `config.toml`, the server must be restarted for them to be applied.
 
@@ -350,9 +230,14 @@ Only if the `cert` and `key` are available will the server run over https.
 Optional string with the static files folder path.
 
 #### templates: string?
-Optional string with the path to the [minijinja](https://github.com/mitsuhiko/minijinja) templates folder.
+Optional string with the path to the
+[minijinja](https://github.com/mitsuhiko/minijinja) templates folder.
 
-#### routes: [{method: string, path: string, requests: [{...}]?, response: {...}?}]
+#### data: string?
+Optional string with the path where templates can read, write and remove files.
+If not passed, these functions will be unavailable to templates.
+
+#### routes: [{method: string, path: string, template: string}]
 Optional array of objects that define [reverse proxy](https://en.wikipedia.org/wiki/Reverse_proxy) routes:
  - `method` is a string with one of the http methods:
    - GET
@@ -364,34 +249,47 @@ Optional array of objects that define [reverse proxy](https://en.wikipedia.org/w
    - OPTIONS
    - TRACE
    - CONNECT
- - `path` is a string with the path associated with the route, `:var` is acceptable for setting path variables (ex: /api/user/:id).
+ - `path` is a string with the path associated with the route, `:var` is
+acceptable for setting path variables (ex: /api/user/:id).
+ - `template` is the template path associated with this route within the
+`templates` folder.
 
-#### routes.requests: [{name: string?, method: string, headers: {header: string}?, url: string, body: string?}]?
-Requests is an optional array of objects that represent requests that need to be made to generate the response.
- - `name` is an optional string that will be used (if present) to store the response data associated with the request to be made available in [minijinja](https://github.com/mitsuhiko/minijinja) templates.
- - `method` is a required string containing the http method (or a [minijinja](https://github.com/mitsuhiko/minijinja) template) as described in the routes definition.
- - `headers` is an object with the keys been the header to be setted in the request and the values a string containing the value of the header or a [minijinja](https://github.com/mitsuhiko/minijinja) template to generate it.
- - `headers` is an object with the keys being the header to be configured in the request and the values being a string containing the header value or a [minijinja](https://github.com/mitsuhiko/minijinja) template to generate it.
- - `url` is a required [minijinja](https://github.com/mitsuhiko/minijinja) template or a raw string associated with the request.
- - `body` is an optional [minijinja](https://github.com/mitsuhiko/minijinja) template or a raw string associated with the request.
+### Template variables
 
-#### routes.response {status: string?, headers: {header: string}?, body: string?}?
-The response starts with the status, headers, and response body of the last request in the requests array, or if not present an empty 200 response, and the properties here are modifiers of the response sent by the [reverse proxy](https://en.wikipedia.org/wiki/Reverse_proxy) to the client.
- - `status` is an optional string or [minijinja](https://github.com/mitsuhiko/minijinja) template that represents an integer to modify the status code of the response.
- - `headers` is an optional object where the keys are the headers to be modified in the response and the values are a string or a [minijinja](https://github.com/mitsuhiko/minijinja) template representing the value associated with the header.
- - `body` is an optional string or [minijinja](https://github.com/mitsuhiko/minijinja) template with the body to be replaced with the original response body.
+#### method: string
+The `method` associated with this `route`. It is useful when the same template
+is used in many `routes`.
 
-### Available [minijinja](https://github.com/mitsuhiko/minijinja) template variables
+#### url: string
+It is the junction of the `path` and the `route` `query`.
+
+Ex.: `http://localhost:3000/api/users?name=john#me` => `/api/users?name=john`
+
+#### route: string
+It is the `route` as declared in the `config` file.
+
+Ex.: `/api/user/:id`.
 
 #### path: string
-The associated path passed by the client in the request.
+The associated `path` passed by the client in the request.
 
 Ex.: `/api/user/:id` => `/api/user/25`.
 
 #### query: string?
-The associated query string or `none` passed by the client in the request.
+The associated `query` string passed by the client in the request.
 
 Ex.: `http://localhost:3000/api/users?name=john` => `name=john`
+
+#### params: {param: string}
+The associated object of the `path` `params` associated with the client
+request on a given `route`.
+
+Ex: `/api/user/:id` => `http://localhost:3000/api/user/25` => {"id": "25"}
+
+#### vars: {param: string}
+The associated object of the `query` params associated with the client request.
+
+Ex.: `http://localhost:3000/api/users?name=john` => `{"name": "john"}`
 
 #### headers: {header: string}
 The associated object of the headers passed by the client in the request.
@@ -400,32 +298,65 @@ Note that all header keys are in **lowercase**.
 
 Ex: Content-Type: text/plain => {"content-type": "text/plain"}
 
-#### params: {param: string}
-The associated object of the path params associated with the client request on a given route.
-
-Ex: `/api/user/:id` => `http://localhost:3000/api/user/25` => {"id": "25"}
-
-#### vars: {param: string}
-The associated object of the query params associated with the client request.
-
-Ex.: `http://localhost:3000/api/users?name=john` => `{"name": "john"}`
-
-#### body: string
+#### body: binary
 The body passed by the client in the request.
 
-#### json
-The body passed by the client in the request converted to json.
+### Modify response status and headers within the template
+An example of a redirect.
 
-If it fails contains the body as a json string.
+```jinja
+{% set modify = {"status": 303, "headers": {"Location": "/new/location"}} %}
+```
+ - status (integer?): The new response status code, if not passed, will use
+200 by default.
+ - headers ({name: value}?): The headers that should be changed in the
+response.
 
-#### data: {name: {status: integer, headers: {header: string}, body: string, json}}
-The data object is where all the results of the [reverse proxy](https://en.wikipedia.org/wiki/Reverse_proxy) request array are stored. A result is stored only if there is a name associated with it and will be available for the next request or response templates.
+### Reverse proxy within the template
+An example of a reverse proxy.
 
- - `name`: Object keys are the `name` passed in the `requests` array.
- - `status`: The response status associated with the request.
- - `headers`: The response headers associated with the request (the header name is always **lowercase** in this object)
- - `body`: The response body as a string associated with the request.
- - `json`: The response body converted to json (or if it fails as json string) associated with the request.
+```jinja
+{% set proxy = {"url": "https://another_random_host_ip"~url} %}
+```
+ - url (string): The proxy URL, is required.
+ - method (string?): The method used for the proxy request. By default, the
+method passed in the original request.
+ - headers ({name: value}?): The headers that should be changed in the
+proxy request. By default, do not change any header.
+ - body (binary?): The body of the proxy request. By default,
+the original body.
+
+### Custom functions
+
+#### command (cmd: string) -> {code: integer, stdout: binary, stdin: binary}
+
+#### read
+
+#### write
+
+#### remove
+
+#### get
+
+#### delete
+
+#### head
+
+#### options
+
+#### post
+
+#### put
+
+#### patch
+
+### Custom filters
+
+#### parse (data: binary, encoding: string) -> any
+
+#### format (data: any, encoding: string) -> string
+
+#### bytes (data: string) -> binary
 
 ## 📦 Releases
 Currently, only binaries for generic versions of Linux are distributed across
@@ -437,35 +368,6 @@ rustup target add x86_64-unknown-linux-musl
 cargo update
 cargo build --release --target x86_64-unknown-linux-musl
 ```
-
-## 💡 Microservices
-A list of microservices I use combined with `minirps`:
- - [serialscale](https://github.com/marcodpt/serialscale): An IOT server
-written in rust for reading weighing data on scales via serial port.
- - [rawprinter](https://github.com/marcodpt/rawprinter): An IOT server written
-in rust for connecting via USB to raw printers.
-
-## 📢 Motivation
-There are already several static page servers.
-
-However, what sets `minirps` apart is its high flexibility.
-
-In addition to delivering the basics well: static pages, `HTTPS`, `CORS`.
-
-Adding [minijinja](https://github.com/mitsuhiko/minijinja) as a template
-language and request logic allows you to create a powerful reverse proxy.
-
-What [php](https://www.php.net/) is to [apache](https://httpd.apache.org/),
-[minijinja](https://github.com/mitsuhiko/minijinja) is to `minirps`, with the
-difference of being a single binary with a simple configuration that also
-accepts its syntax.
-
-My experience building backends has taught me that small servers that connect
-together produce better results in the long run due to their flexibility and
-ease of maintenance.
-
-`Minirps` tries to be a small server that connects others servers, following
-the spirit of [UNIX philosophy](https://en.wikipedia.org/wiki/Unix_philosophy).
 
 ## 🤝 Contributing
 It's a very simple project.
