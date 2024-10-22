@@ -10,16 +10,16 @@
       "template": "index.html"
     }, {
       "method": "GET",
-      "path": "/form",
-      "template": "form.html"
+      "path": "/debug",
+      "template": "debug/form.html"
     }, {
       "method": "GET",
       "path": "/debug/:name",
-      "template": "debug.html"
+      "template": "debug/result.html"
     }, {
       "method": "POST",
       "path": "/debug/:name",
-      "template": "debug.html"
+      "template": "debug/result.html"
     }, {
       "method": "GET",
       "path": "/cli",
@@ -60,6 +60,10 @@
       "method": "POST",
       "path": "/notes/:title",
       "template": "notes/update.html"
+    }, {
+      "method": "GET",
+      "path": "/cors",
+      "template": "cors.html"
     }
   ]
 }

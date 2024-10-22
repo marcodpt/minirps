@@ -2,6 +2,7 @@ mod templates;
 mod assets;
 mod config;
 mod app;
+mod debug;
 
 use std::error::Error;
 use std::path::PathBuf;
@@ -127,7 +128,7 @@ fn init () -> Result<(Router, u16, Option<OpenSSLConfig>), Box<dyn Error>> {
     Ok((app, port, ssl))
 }
 
-#[tokio::main]
+#[tokio::main(flavor = "multi_thread", worker_threads = 10)]
 async fn main() -> () {
     let (app, port, ssl) = match init() {
         Ok(server) => server,

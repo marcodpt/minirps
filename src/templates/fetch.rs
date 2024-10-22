@@ -3,6 +3,7 @@ use reqwest::{Method, Url};
 use reqwest::blocking::{Client, Response};
 use serde_derive::Serialize;
 use std::collections::HashMap;
+use crate::debug::debug;
 
 #[derive(Serialize)]
 struct Res {
@@ -66,14 +67,24 @@ fn fetch (
         }
     };
 
+    let m = method.as_str().to_string();
+    let p = url.to_string();
     let mut request = Client::new().request(method, url);
     if let Some(body) = body {
         request = request.body(body.to_vec());
     }
 
+    debug(&m, &p, None, "");
     match request.send() {
-        Ok(response) => Res::new(response),
-        Err(err) => Res::err(format!("Request fail!\n{:#?}", err))
+        Ok(response) => {
+            debug(&m, &p, Some(200), "");
+            Res::new(response)
+        },
+        Err(err) => {
+            let error = err.to_string();
+            debug(&m, &p, Some(500), &error);
+            Res::err(format!("Request fail!\n{}", &error))
+        }
     }
 }
 

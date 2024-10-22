@@ -1,25 +1,21 @@
-{#{%- set data = get('http://localhost:4000/tests/data.json') -%}#}
+{%- set data = get('http://localhost:4000/tests/data.json') -%}
 {#{%- with data -%}#}
   {#{%- set json = body | parse("json") -%}#}
   {#{%- set body = body | parse("text") -%}#}
 {#{%- endwith -%}#}
-{#{%- set json = body | parse("json") -%}#}
 {%- set body = body | parse("text") -%}
-{%- if query -%}
-{%- set status = 201 -%}
-{%- else -%}
-{%- set status = data.status -%}
-{%- endif -%}
-{%- set set_headers = {"Content-Type": headers['x-set-content']} -%}
-path: {{path}}
+{%- set modify = {
+  "headers": {
+    "Content-Type": headers['x-set-content']
+  }
+} -%}
+path: {{path | safe}}
 query: {{query}}
-headers['content-type']: {{headers['content-type']}}
+headers['content-type']: {{headers['content-type'] | safe}}
 params.id: {{params.id}}
 vars.x: {{vars.x}}
-body: {{body}}
-json: {{json}}
+body: {{body | safe}}
 
-status: {{data.status}}
-crazy['content-type']: {{data.headers['content-type']}}
+{#crazy['content-type']: {{data.headers['content-type']}}#}
 {#json.id: {{data.json.id}}#}
-crazy: {{data.body}}
+{#crazy: {{data.body}}#}

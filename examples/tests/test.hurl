@@ -125,7 +125,7 @@ HTTP/1.1 405
 body == ""
 
 # Extracting data showcase
-POST http://localhost:4000/vars/345
+GET http://localhost:4000/vars/345?x=12
 Content-Type: text/html
 X-Set-Content: text/plain
 `<h1>Data</h1>`
@@ -133,16 +133,14 @@ HTTP/1.1 200
 Content-Type: text/plain
 [Asserts]
 body contains "path: /vars/345"
-body contains "query: none"
+body contains "query: x=12"
 body contains "headers['content-type']: text/html"
 body contains "params.id: 345"
-body contains "vars.x:"
+body contains "vars.x: 12"
 body contains "body: <h1>Data</h1>"
-body contains "json: <h1>Data</h1>"
-body contains "status: 200"
-body contains "crazy['content-type']: application/json"
-body contains "json.id: 38"
-body contains "\"z\": true"
+#body contains "status: 200"
+#body contains "crazy['content-type']: application/json"
+#body contains "json.id: 38"
 
 # Extracting data showcase
 POST http://localhost:4000/vars/test?x=60

@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}CORS - {% endblock title %}
+{% block main %}
+  <h1>CORS test => fetch http://localhost:8081/cors.json</h1>
+  <a href="/cors.json">Raw Data</a>
+  <br>
+  <code>
+    minirps -f examples/demo/config.toml
+  </code>
+  <pre><p></p></pre>
+  <script>
+    fetch('http://localhost:8081/cors.json')
+      .then(response => response.text())
+      .then(data => document.body.querySelector('p').textContent = data)
+      .catch(err => {
+        document.body.querySelector('p').textContent = 'CORS Fail!'
+        throw err
+      })
+  </script>
+{% endblock main %}

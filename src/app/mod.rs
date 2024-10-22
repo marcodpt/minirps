@@ -14,6 +14,7 @@ use context::Context;
 use proxy::Proxy;
 use modify::Modify;
 use crate::config::Route;
+use crate::debug::debug;
 
 type Env = Environment<'static>;
 #[derive(Clone)]
@@ -89,8 +90,18 @@ pub async fn handler (
     Query(vars): Query<HashMap<String, String>>,
     request: Request,
 ) -> Result<Response, (StatusCode, String)> {
+    let method = request.method().as_str().to_string();
+    let path = request.uri().to_string();
+    debug(&method, &path, None, "");
     match state.run(params, vars, request).await {
-        Ok(response) => Ok(response),
-        Err(err) => Err((StatusCode::INTERNAL_SERVER_ERROR, err.to_string()))
+        Ok(response) => {
+            debug(&method, &path, Some(200), "");
+            Ok(response)
+        },
+        Err(err) => {
+            let error = err.to_string();
+            debug(&method, &path, Some(500), &error);
+            Err((StatusCode::INTERNAL_SERVER_ERROR, error))
+        }
     }
 }

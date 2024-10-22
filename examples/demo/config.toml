@@ -4,6 +4,7 @@ port = 8081
 assets = "assets"
 data = "data"
 templates = "templates"
+cors = ["http://localhost:8080"]
 
 [[routes]]
 method = "GET"
@@ -12,18 +13,18 @@ template = "index.html"
 
 [[routes]]
 method = "GET"
-path = "/form"
-template = "form.html"
+path = "/debug"
+template = "debug/form.html"
 
 [[routes]]
 method = "GET"
 path = "/debug/:name"
-template = "debug.html"
+template = "debug/result.html"
 
 [[routes]]
 method = "POST"
 path = "/debug/:name"
-template = "debug.html"
+template = "debug/result.html"
 
 [[routes]]
 method = "GET"
@@ -54,3 +55,28 @@ template = "chemistry/data.html"
 method = "GET"
 path = "/starwars/:resource"
 template = "starwars.html"
+
+[[routes]]
+method = "GET"
+path = "/notes"
+template = "notes/read.html"
+
+[[routes]]
+method = "POST"
+path = "/notes"
+template = "notes/create.html"
+
+[[routes]]
+method = "GET"
+path = "/notes/:title"
+template = "notes/edit.html"
+
+[[routes]]
+method = "POST"
+path = "/notes/:title"
+template = "notes/update.html"
+
+[[routes]]
+method = "GET"
+path = "/cors"
+template = "cors.html"

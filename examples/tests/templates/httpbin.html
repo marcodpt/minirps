@@ -1,6 +1,6 @@
 {% set url = "https://httpbin.org/anything/"~params.id %}
 {% if query %}
-{% set url = url~"?"~query %}
+  {% set url = url~"?"~query %}
 {% endif %}
 {% set
   redirect = {

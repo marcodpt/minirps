@@ -8,6 +8,7 @@ use axum::{
 };
 use glob_match::glob_match;
 use mime_guess;
+use crate::debug::debug;
 
 #[derive(Clone)]
 pub struct Assets {
@@ -34,7 +35,7 @@ impl Assets {
         }
     }
 
-    pub fn get (&self, path_str: &str) -> Result<Response, StatusCode> {
+    fn getter (&self, path_str: &str) -> Result<Response, StatusCode> {
         let path = Path::new(path_str);
         let dir = self.dir.as_path();
         let mut file = dir.join(path);
@@ -89,5 +90,19 @@ impl Assets {
         }
 
         Ok(response)
+    }
+
+    pub fn get (&self, path_str: &str) -> Result<Response, StatusCode> {
+        let path = format!("/{}", path_str);
+        match self.getter(path_str) {
+            Ok(response) => {
+                debug("GET", &path, Some(200), "");
+                Ok(response)
+            },
+            Err(status) => {
+                debug("GET", &path, Some(status.as_u16()), "");
+                Err(status)
+            }
+        }
     }
 }
