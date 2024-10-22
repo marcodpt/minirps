@@ -2,9 +2,11 @@
 {% block title %}Notes - {% endblock title %}
 {% block main %}
   <h1>Notes taking app</h1>
-  {% set dir = read('notes') %}
+  {% set dir = read('notes') | sort(attribute="created") %}
   {% for note in dir %}
     <h2>{{note.name}}</h2>
+    <span>{{note.created}}</span>
+    <a href="notes/{{note.name}}">Edit</a>
     <pre><p>{{read('notes/'~note.name) | parse("text")}}</p></pre>
   {% endfor %}
   <form method="POST">

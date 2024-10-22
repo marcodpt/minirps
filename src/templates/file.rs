@@ -4,6 +4,7 @@ use std::path::PathBuf;
 use std::error::Error;
 use minijinja::Value;
 use serde_derive::Serialize;
+use chrono::{DateTime, Local};
 
 #[derive(Serialize)]
 struct File {
@@ -77,13 +78,25 @@ impl IO {
                                 if let Ok(meta) = p.metadata() {
                                     len = meta.len();
                                     if let Ok(time) = meta.accessed() {
-                                        accessed = format!("{time:?}");
+                                        let time: DateTime<Local> =
+                                            time.into();
+                                        accessed = time
+                                            .format("%Y-%m-%d %H:%M")
+                                            .to_string();
                                     }
                                     if let Ok(time) = meta.created() {
-                                        created = format!("{time:?}");
+                                        let time: DateTime<Local> =
+                                            time.into();
+                                        created = time
+                                            .format("%Y-%m-%d %H:%M")
+                                            .to_string();
                                     }
                                     if let Ok(time) = meta.modified() {
-                                        modified = format!("{time:?}");
+                                        let time: DateTime<Local> =
+                                            time.into();
+                                        modified = time
+                                            .format("%Y-%m-%d %H:%M")
+                                            .to_string();
                                     }
                                 }
                                 files.push(File {

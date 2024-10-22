@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}Note: {{params.title}} - {% endblock title %}
+{% block main %}
+  <h1>Edit Note</h1>
+  {% set file = read('notes/'~params.title) %}
+  {% set content = file | parse("text") %}
+  <h2>{{params.title}}</h2>
+  <form method="POST">
+    <textarea
+      name="content"
+      placeholder="Blank note will be removed!"
+    >{{content}}</textarea>
+    <button type="submit">Save</button>
+  </form>
+{% endblock main %}

@@ -1,0 +1,12 @@
+{% set data = body | parse("form") %}
+{% if data.content %}
+  {{write('notes/'~params.title, data.content | bytes)}}
+{% else %}
+  {{remove('notes/'~params.title)}}
+{% endif %}
+{% set modify = {
+  "status": 303,
+  "headers": {
+    "Location": "/notes"
+  }
+} %}

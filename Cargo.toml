@@ -33,6 +33,7 @@ mime_guess = "2"
 minijinja = { version = "2", features = ["loader"] }
 reqwest = { version = "0", features = ["blocking"] }
 glob-match = "0"
+chrono = "0"
 
 [profile.release]
 opt-level = 3

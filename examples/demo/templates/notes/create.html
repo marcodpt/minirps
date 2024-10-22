@@ -1,15 +1,23 @@
-{% extends "base.html" %}
-{% block title %}Notes Create - {% endblock title %}
-{% block main %}
-  {%- set data = body | parse("form") -%}
-  {%- set error = write('notes/'~data.title, data.content | bytes) -%}
-  {% if not error %}
-    {%- set modify = {
-      "status": 201,
-      "location": "/notes"
-    } -%}
-  {% else %}
+{% set data = body | parse("form") %}
+{% set file = read('notes/'~data.title) %}
+{% if not file is none %}
+  {% set error = 'Note already exists!' %}
+{% endif %}
+{% if not error %}
+  {% set error = write('notes/'~data.title, data.content | bytes) %}
+{% endif %}
+{% if not error %}
+  {% set modify = {
+    "status": 303,
+    "headers": {
+      "Location": "/notes"
+    }
+  } %}
+{% else %}
+  {% extends "base.html" %}
+  {% block title %}Notes Create - {% endblock title %}
+  {% block main %}
     <h1>Error creating note!</h1>
     <pre><code>{{error}}</code></pre>
-  {% endif %}
-{% endblock main %}
+  {% endblock main %}
+{% endif %}
