@@ -22,6 +22,6 @@ template = "httpbin.html"
 
 ## extract data showcase
 [[routes]]
-method = "GET"
+method = "POST"
 path = "/vars/:id"
-template = "tests/data.html"
+template = "tests/data.txt"

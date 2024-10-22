@@ -27,13 +27,13 @@ impl Proxy {
         let mut r = RequestBuilder::from_parts(Client::new(),
             Request::new(method.parse()?, proxy.url.parse()?)
         );
-        for (key, value) in headers.iter() {
-            r = r.header(key.clone(), value.clone());
-        }
         if let Some(headers) = proxy.headers {
             for (key, value) in headers.iter() {
                 r = r.header(key, value);
             }
+        }
+        for (key, value) in headers.iter() {
+            r = r.header(key.clone(), value.clone());
         }
         let result = r.body(proxy.body.unwrap_or(body.to_vec()))
             .send().await?;

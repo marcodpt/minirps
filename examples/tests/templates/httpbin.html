@@ -3,12 +3,13 @@
   {% set url = url~"?"~query %}
 {% endif %}
 {% set
-  redirect = {
-    "method": method,
+  proxy = {
+    "method": params.method,
     "url": url, 
     "headers": {
       "X-Set": "some-data",
-      "X-Var": vars.x
+      "X-Var": vars.x | default(""),
+      "Host": "httpbin.org"
     }
   }
 %}
