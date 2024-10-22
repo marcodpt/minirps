@@ -128,7 +128,7 @@ fn init () -> Result<(Router, u16, Option<OpenSSLConfig>), Box<dyn Error>> {
     Ok((app, port, ssl))
 }
 
-#[tokio::main(flavor = "multi_thread", worker_threads = 10)]
+#[tokio::main]
 async fn main() -> () {
     let (app, port, ssl) = match init() {
         Ok(server) => server,

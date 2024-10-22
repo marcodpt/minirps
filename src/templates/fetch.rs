@@ -4,6 +4,7 @@ use reqwest::blocking::{Client, Response};
 use serde_derive::Serialize;
 use std::collections::HashMap;
 use crate::debug::debug;
+use tokio::task::block_in_place;
 
 #[derive(Serialize)]
 struct Res {
@@ -75,17 +76,19 @@ fn fetch (
     }
 
     debug(&m, &p, None, "");
-    match request.send() {
-        Ok(response) => {
-            debug(&m, &p, Some(200), "");
-            Res::new(response)
-        },
-        Err(err) => {
-            let error = err.to_string();
-            debug(&m, &p, Some(500), &error);
-            Res::err(format!("Request fail!\n{}", &error))
+    block_in_place(move || {
+        match request.send() {
+            Ok(response) => {
+                debug(&m, &p, Some(200), "");
+                Res::new(response)
+            },
+            Err(err) => {
+                let error = err.to_string();
+                debug(&m, &p, Some(500), &error);
+                Res::err(format!("Request fail!\n{}", &error))
+            }
         }
-    }
+    })
 }
 
 pub fn get (url: &str) -> Value {
