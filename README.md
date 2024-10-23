@@ -8,7 +8,7 @@ Mini [reverse proxy](https://en.wikipedia.org/wiki/Reverse_proxy) server
 written in rust
 
 ## ❤️ Features
- - Static file server based on [axum](https://github.com/tokio-rs/axum).
+ - Static file server.
  - HTTPS
  - [CORS](https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS)
  - The optional configuration file can be written in
@@ -152,6 +152,9 @@ config.json
 ### Demo
 ```
 minirps -f examples/demo/config.toml
+```
+alternatively
+```
 minirps -f examples/demo/config.json
 ```
 
@@ -187,7 +190,8 @@ Command line argument paths are relative to the current working directory.
 
 `config` paths are relative to your own directory.
 
-Currently, any changes to `config.toml`, the server must be restarted for them to be applied.
+Currently, any changes to `config`, the server must be restarted for them
+to be applied.
 
 #### port: integer?
 Optional integer port number to run the server on, default: 3000
@@ -234,8 +238,8 @@ Optional string with the path to the
 [minijinja](https://github.com/mitsuhiko/minijinja) templates folder.
 
 #### data: string?
-Optional string with the path where templates can read, write and remove files.
-If not passed, these functions will be unavailable to templates.
+Optional string with the path where templates can `read`, `write` and `remove`
+files. If not passed, these functions will be unavailable to templates.
 
 #### routes: [{method: string, path: string, template: string}]
 Optional array of objects that define [reverse proxy](https://en.wikipedia.org/wiki/Reverse_proxy) routes:
@@ -325,13 +329,12 @@ to be returned in the template's global state.
 The response body is always the result of the template, and this variable
 allows you to modify the status code and headers.
 
- - status (integer?): The new response status code, if not passed, will use
+ - `status` (integer?): The new response status code, if not passed, will use
 200 by default.
- - headers ({name: value}?): The headers that should be changed in the
+ - `headers` ({name: value}?): The headers that should be changed in the
 response.
 
 An example of a redirect.
-
 ```jinja
 {% set modify = {"status": 303, "headers": {"Location": "/new/location"}} %}
 ```
@@ -349,7 +352,6 @@ the original body.
 
 A simple proxy that retains the request method, headers, body and path and just
 directs it to another host.
-
 ```jinja
 {% set proxy = {"url": "https://another.host.ip"~url} %}
 ```
@@ -357,25 +359,49 @@ directs it to another host.
 ### Custom functions
 
 #### command (cmd) -> {code, stdout, stdin}
- - `cmd` string:
- - `code` integer:
- - `stdout` binary:
- - `stdin` binary:
+Executes a command passed in the template.
+
+This function does not raise errors, in case of failure it returns the
+code 999999, and the error message.
+
+ - `cmd` string: The command to be executed by the system.
+ - `code` integer: The response code, in general zero indicates OK, and a
+number greater than zero the error code.
+ - `stdout` binary: The standard output of the executed command.
+ - `stderr` binary: The error message returned.
+
+List files in the current directory on UNIX systems.
+```
+{% set res = command("ls -l")%}
+{% set output = res.stdout | parse("text") %}
+```
 
 #### read (file) -> data
- - `file` string:
- - `data` binary?:
+Reads the contents of a file, if it does not exist returns `None`.
 
-#### read (dir: string) -> {accessed, created, modified, is_dir, is_file, is_symlink, name, len}
- - `dir` string: 
- - `accessed` string:
- - `created` string:
- - `modified` string:
- - `is_dir` bool:
- - `is_file` bool:
- - `is_symlink` bool:
- - `name` string:
- - `len` u64:
+This function does not return errors, any read error will return `None`.
+
+It will only be available if the configuration file contains the `data`
+property with the folder that contains the files that can be read and modified.
+
+ - `file` string: The path of the file to read.
+ - `data` binary?: The contents of the file or `None` in case of errors.
+
+#### read (dir: string) -> [{...info}]
+This function also works with a directory, which in this case will return an
+array with information about the files contained in it.
+
+ - `dir` string: If the path passed is a directory.
+
+**info**
+ - `accessed` string: Last access date (%Y-%m-%d %H:%M:%S).
+ - `created` string: Creation date (%Y-%m-%d %H:%M:%S).
+ - `modified` string: Modification date (%Y-%m-%d %H:%M:%S).
+ - `is_dir` bool: True if it is a directory.
+ - `is_file` bool: True if it is a file.
+ - `is_symlink` bool: True if it is a symbolic link.
+ - `name` string: Entry name.
+ - `len` u64: Size in bytes.
 
 #### write (file, data) -> error
  - `file` string:
@@ -421,7 +447,6 @@ Supported encodings:
    - text: It just transforms the data into text.
  - `result`: A value supported by the template with associated data.
 
-
 ```jinja
 {% set data = read("some/file.txt") | parse("text") %}
 ```
@@ -430,7 +455,6 @@ Supported encodings:
 {% set response = get("https://some/api") %}
 {% set data = response.body | parse("json") %}
 ```
-
 
 #### format (data, encoding) -> text
 Converts a template variable to a formatted string.
@@ -451,10 +475,10 @@ text. Supported encodings:
 
 ```jinja
 {% set data = {"name": "John", "age": 30} %}
-{{ data | format("form") }}
+{% set text = data | format("form") %}
+{{text}}
 ```
 
-Result:
 ```
 name=John&age=30
 ```

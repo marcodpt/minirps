@@ -4,7 +4,7 @@ use std::path::PathBuf;
 use std::error::Error;
 use minijinja::Value;
 use serde_derive::Serialize;
-use chrono::{DateTime, Local};
+use crate::debug::time_string;
 
 #[derive(Serialize)]
 struct File {
@@ -78,25 +78,13 @@ impl IO {
                                 if let Ok(meta) = p.metadata() {
                                     len = meta.len();
                                     if let Ok(time) = meta.accessed() {
-                                        let time: DateTime<Local> =
-                                            time.into();
-                                        accessed = time
-                                            .format("%Y-%m-%d %H:%M")
-                                            .to_string();
+                                        accessed = time_string(time.into());
                                     }
                                     if let Ok(time) = meta.created() {
-                                        let time: DateTime<Local> =
-                                            time.into();
-                                        created = time
-                                            .format("%Y-%m-%d %H:%M")
-                                            .to_string();
+                                        created = time_string(time.into());
                                     }
                                     if let Ok(time) = meta.modified() {
-                                        let time: DateTime<Local> =
-                                            time.into();
-                                        modified = time
-                                            .format("%Y-%m-%d %H:%M")
-                                            .to_string();
+                                        modified = time_string(time.into());
                                     }
                                 }
                                 files.push(File {

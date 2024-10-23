@@ -1,4 +1,8 @@
-use chrono::Local;
+use chrono::{Local, DateTime};
+
+pub fn time_string (time: DateTime<Local>) -> String {
+    time.format("%Y-%m-%d %H:%M:%S").to_string()
+}
 
 pub fn debug (
     method: &str,
@@ -6,8 +10,8 @@ pub fn debug (
     status: Option<u16>,
     error: &str
 ) -> () {
-    println!("{} {} {} {}{}", 
-        Local::now().format("[%Y-%m-%d %H:%M:%S]").to_string(),
+    println!("[{}] {} {} {}{}", 
+        time_string(Local::now()),
         method,
         path,
         match status {
