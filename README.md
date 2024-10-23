@@ -21,12 +21,12 @@ functions:
    - Execute commands in the template.
    - [Reverse proxy](https://en.wikipedia.org/wiki/Reverse_proxy). 
    - Modify the response headers and status in the template.
-   - Parse and format to in the template to:
+   - Parse and format to:
      - [JSON](https://www.json.org/json-en.html)
      - [TOML](https://toml.io/en/)
      - [FormData](https://developer.mozilla.org/en-US/docs/Web/HTTP/Methods/POST)
  - Safe rust and good code organization.
- - No panics after startup (Every panic is a bug).
+ - No panics after startup (every panic is a bug).
  - Extensively tested with [hurl](https://github.com/Orange-OpenSource/hurl).
  - Good debugging experience with the server displaying requests in the
 terminal and error messages in templates for humans.
@@ -308,41 +308,51 @@ The associated object of the headers passed by the client in the request.
 
 Note that all header keys are in **lowercase**.
 
-Ex: Content-Type: text/plain => {"content-type": "text/plain"}
+```
+Content-Type: text/plain => {"content-type": "text/plain"}
+```
 
 #### body: binary
 The body passed by the client in the request.
 
 ### Template return state
+Variables that, if defined, modify the behavior of the server response.
 
-#### modify {status, headers: {name, value}}
+It only works if they are **declared outside the blocks**
+to be returned in the template's global state.
 
-### Modify response status and headers within the template
-An example of a redirect.
+#### modify {status, headers: {name: value}}
+The response body is always the result of the template, and this variable
+allows you to modify the status code and headers.
 
-```jinja
-{% set modify = {"status": 303, "headers": {"Location": "/new/location"}} %}
-```
  - status (integer?): The new response status code, if not passed, will use
 200 by default.
  - headers ({name: value}?): The headers that should be changed in the
 response.
 
-#### proxy {url, method, headers: {name, value}, body}
-
-### Reverse proxy within the template
-An example of a reverse proxy.
+An example of a redirect.
 
 ```jinja
-{% set proxy = {"url": "https://another_random_host_ip"~url} %}
+{% set modify = {"status": 303, "headers": {"Location": "/new/location"}} %}
 ```
- - url (string): The proxy URL, is required.
- - method (string?): The method used for the proxy request. By default, the
+
+#### proxy {url, method, headers: {name, value}, body}
+Uses a proxy instead of the template result.
+
+ - `url` (string): The proxy URL, is required.
+ - `method` (string?): The method used for the proxy request. By default, the
 method passed in the original request.
- - headers ({name: value}?): The headers that should be changed in the
+ - `headers` ({name: value}?): The headers that should be changed in the
 proxy request. By default, do not change any header.
- - body (binary?): The body of the proxy request. By default,
+ - `body` (binary?): The body of the proxy request. By default,
 the original body.
+
+A simple proxy that retains the request method, headers, body and path and just
+directs it to another host.
+
+```jinja
+{% set proxy = {"url": "https://another.host.ip"~url} %}
+```
 
 ### Custom functions
 
@@ -394,9 +404,33 @@ the original body.
 ### Custom filters
 
 #### parse (data, encoding) -> result
- - `data` binary:
- - `encoding` string:
- - `result`:
+Converts the raw data returned from some function to a template variable using
+the passed encoding.
+
+This function raises an `error` if you use an unsupported encoding or if the
+decoding fails.
+
+Returning the request with code 500 in case of error.
+
+ - `data` binary: Raw data returned from some function.
+ - `encoding` string: The encoding to be used when reading the data.
+Supported encodings:
+   - form: [FormData](https://developer.mozilla.org/en-US/docs/Web/HTTP/Methods/POST)  
+   - json: [JSON](https://www.json.org/json-en.html)
+   - toml: [TOML](https://toml.io/en/)
+   - text: It just transforms the data into text.
+ - `result`: A value supported by the template with associated data.
+
+
+```jinja
+{% set data = read("some/file.txt") | parse("text") %}
+```
+
+```jinja
+{% set response = get("https://some/api") %}
+{% set data = response.body | parse("json") %}
+```
+
 
 #### format (data, encoding) -> text
 Converts a template variable to a formatted string.
@@ -416,7 +450,7 @@ text. Supported encodings:
  - `text` string: The text after encoding.
 
 ```jinja
-{% set data = {"name": "John", "age": 30} -%}
+{% set data = {"name": "John", "age": 30} %}
 {{ data | format("form") }}
 ```
 
