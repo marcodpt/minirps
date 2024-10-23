@@ -362,7 +362,7 @@ directs it to another host.
 Executes a command passed in the template.
 
 This function does not raise errors, in case of failure it returns the
-code 999999, and the error message.
+`code` `999999`, and the error message.
 
  - `cmd` string: The command to be executed by the system.
  - `code` integer: The response code, in general zero indicates OK, and a
@@ -379,13 +379,17 @@ List files in the current directory on UNIX systems.
 #### read (file) -> data
 Reads the contents of a file, if it does not exist returns `None`.
 
-This function does not return errors, any read error will return `None`.
+This function does not raise errors, any read error will return `None`.
 
-It will only be available if the configuration file contains the `data`
+It will only be available if the `config` file contains the `data`
 property with the folder that contains the files that can be read and modified.
 
  - `file` string: The path of the file to read.
  - `data` binary?: The contents of the file or `None` in case of errors.
+
+```jinja
+{% set content = read("some/file.json") | parse("json") %}
+```
 
 #### read (dir: string) -> [{...info}]
 This function also works with a directory, which in this case will return an
@@ -403,21 +407,63 @@ array with information about the files contained in it.
  - `name` string: Entry name.
  - `len` u64: Size in bytes.
 
+```jinja
+{% set content = read("some/dir") %}
+{% for entry in content %}
+  {{entry.name}}
+{% endfor %}
+```
+
 #### write (file, data) -> error
- - `file` string:
- - `data` binary:
- - `error` string?:
+Writes to a file. If necessary, create folders for the file. Always overwrites
+content if it exists.
+
+If an error occur, the error text will be returned, otherwise `None`.
+Therefore, it does not raise errors.
+
+It will only be available if the `config` file contains the `data`
+property with the folder that contains the files that can be read and modified.
+
+ - `file` string: The file path.
+ - `data` binary: The raw data to be written.
+ - `error` string?: Error message or `None`.
+
+```jinja
+{% set data = "Hello world!" %}
+{{write("some/file.txt", data | bytes)}}
+```
 
 #### remove (entry) -> error
- - `entry` string:
- - `error` string?: 
+Removes a file or directory recursively.
+
+If an error occur, the error text will be returned, otherwise `None`.
+Therefore, it does not raise errors.
+
+It will only be available if the `config` file contains the `data`
+property with the folder that contains the files that can be read and modified.
+
+ - `entry` string: The path of the file or directory to be removed.
+ - `error` string?: Error message or `None`.
+
+```jinja
+{{remove("some/dir")}}
+```
+
+```jinja
+{{remove("some/file.txt")}}
+```
 
 #### {method} (url, body) -> {status, headers, body}
- - `url` string:
- - `body` binary:
- - `status` integer:
- - `headers` {`name` string: `value` string}:
- - `body` binary:
+Sends a synchronous request to an external resource.
+
+This function does not raise errors, any error in the request will be returned
+`status` code `400` with the `body` containing the error message.
+
+ - `url` string: The URL of the request.
+ - `body` binary: The body of the request.
+ - `status` integer: The HTTP status code of the response.
+ - `headers` {`name` string: `value` string}: Response headers.
+ - `body` binary: Response body.
  - `method`:
    - `get` (url) -> {status, headers, body}
    - `delete` (url) -> {status, headers, body}
@@ -426,6 +472,17 @@ array with information about the files contained in it.
    - `post` (url, body) -> {status, headers, body}
    - `put` (url, body) -> {status, headers, body}
    - `patch` (url, body) -> {status, headers, body}
+
+```jinja
+{% set response = get("https://some/api") %}
+{% set data = response.body | parse("json") %}
+```
+
+```jinja
+{% set body = "some data" %}
+{% set response = post("https://some/api", body | bytes) %}
+{% set message = response.body | parse("text") %}
+```
 
 ### Custom filters
 
@@ -436,7 +493,7 @@ the passed encoding.
 This function raises an `error` if you use an unsupported encoding or if the
 decoding fails.
 
-Returning the request with code 500 in case of error.
+Returning the request with `status` code `500` in case of error.
 
  - `data` binary: Raw data returned from some function.
  - `encoding` string: The encoding to be used when reading the data.
@@ -462,7 +519,7 @@ Converts a template variable to a formatted string.
 This function raises an `error` if you use an unsupported encoding or if the
 encoding fails.
 
-Returning the request with code 500 in case of error.
+Returning the request with `status` code `500` in case of error.
 
  - `data`: Any template variable.
  - `encoding` string: The type of encoding to be adopted when formatting the
