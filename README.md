@@ -181,6 +181,27 @@ hurl --test examples/tests/test.hurl
 ```
 
 ## 📢 Motivation
+The objective of this project is to deliver an http server in a single
+self-contained binary.
+
+Where the basics should be obtained without any configuration file:
+ - static file server.
+ - HTTPS
+ - CORS
+
+And where other reverse proxy functionalities are obtained with simple
+configurations.
+
+Templates have the ability to send requests, read and write files and execute
+commands.
+
+This way they can interact with resources such as databases without the need
+for a complete scripting language such as php, python, ruby...
+
+A small, highly extensible server, without having to manage operating system
+versions, dependencies and packages.
+
+It simply works!
 
 ## 📖 Docs
 ### config
