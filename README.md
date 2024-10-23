@@ -307,7 +307,7 @@ The associated object of the `query` params associated with the client request.
 http://localhost:3000/api/users?name=john => {"name": "john"}
 ```
 
-#### headers: {header: string}
+#### headers: {name: value}
 The associated object of the headers passed by the client in the request.
 
 Note that all header keys are in **lowercase**.
@@ -482,6 +482,15 @@ This function does not raise errors, any error in the request will be returned
 {% set body = "some data" %}
 {% set response = post("https://some/api", body | bytes) %}
 {% set message = response.body | parse("text") %}
+```
+
+#### log (message) -> ()
+Prints a message from the template on the terminal.
+
+ - `message` string: The content of the message.
+
+```jinja
+{{ message("hi!") }}
 ```
 
 ### Custom filters

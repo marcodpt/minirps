@@ -24,6 +24,10 @@ pub fn new (
     env.add_filter("parse", parse);
     env.add_filter("format", format);
     env.add_filter("bytes", bytes);
+    env.add_function("log", |message: &str| -> () {
+        println!("{}", message);
+        ()
+    });
     env.add_function("command", command);
     if let Some(data) = data {
         let io1 = IO::new(data)?;
