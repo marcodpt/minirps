@@ -263,33 +263,45 @@ is used in many `routes`.
 #### url: string
 It is the junction of the `path` and the `route` `query`.
 
-Ex.: `http://localhost:3000/api/users?name=john#me` => `/api/users?name=john`
+```
+http://localhost:3000/api/users?name=john#me => /api/users?name=john
+```
 
 #### route: string
 It is the `route` as declared in the `config` file.
 
-Ex.: `/api/user/:id`.
+```
+/api/user/:id
+```
 
 #### path: string
 The associated `path` passed by the client in the request.
 
-Ex.: `/api/user/:id` => `/api/user/25`.
+```
+http://localhost:3000/api/users?name=john => /api/users
+```
 
 #### query: string?
 The associated `query` string passed by the client in the request.
 
-Ex.: `http://localhost:3000/api/users?name=john` => `name=john`
+```
+http://localhost:3000/api/users?name=john => name=john
+```
 
 #### params: {param: string}
 The associated object of the `path` `params` associated with the client
 request on a given `route`.
 
-Ex: `/api/user/:id` => `http://localhost:3000/api/user/25` => {"id": "25"}
+```
+/api/user/:id => http://localhost:3000/api/user/25 => {"id": "25"}
+```
 
 #### vars: {param: string}
 The associated object of the `query` params associated with the client request.
 
-Ex.: `http://localhost:3000/api/users?name=john` => `{"name": "john"}`
+```
+http://localhost:3000/api/users?name=john => {"name": "john"}
+```
 
 #### headers: {header: string}
 The associated object of the headers passed by the client in the request.
@@ -301,6 +313,10 @@ Ex: Content-Type: text/plain => {"content-type": "text/plain"}
 #### body: binary
 The body passed by the client in the request.
 
+### Template return state
+
+#### modify {status, headers: {name, value}}
+
 ### Modify response status and headers within the template
 An example of a redirect.
 
@@ -311,6 +327,8 @@ An example of a redirect.
 200 by default.
  - headers ({name: value}?): The headers that should be changed in the
 response.
+
+#### proxy {url, method, headers: {name, value}, body}
 
 ### Reverse proxy within the template
 An example of a reverse proxy.
@@ -328,35 +346,98 @@ the original body.
 
 ### Custom functions
 
-#### command (cmd: string) -> {code: integer, stdout: binary, stdin: binary}
+#### command (cmd) -> {code, stdout, stdin}
+ - `cmd` string:
+ - `code` integer:
+ - `stdout` binary:
+ - `stdin` binary:
 
-#### read
+#### read (file) -> data
+ - `file` string:
+ - `data` binary?:
 
-#### write
+#### read (dir: string) -> {accessed, created, modified, is_dir, is_file, is_symlink, name, len}
+ - `dir` string: 
+ - `accessed` string:
+ - `created` string:
+ - `modified` string:
+ - `is_dir` bool:
+ - `is_file` bool:
+ - `is_symlink` bool:
+ - `name` string:
+ - `len` u64:
 
-#### remove
+#### write (file, data) -> error
+ - `file` string:
+ - `data` binary:
+ - `error` string?:
 
-#### get
+#### remove (entry) -> error
+ - `entry` string:
+ - `error` string?: 
 
-#### delete
-
-#### head
-
-#### options
-
-#### post
-
-#### put
-
-#### patch
+#### {method} (url, body) -> {status, headers, body}
+ - `url` string:
+ - `body` binary:
+ - `status` integer:
+ - `headers` {`name` string: `value` string}:
+ - `body` binary:
+ - `method`:
+   - `get` (url) -> {status, headers, body}
+   - `delete` (url) -> {status, headers, body}
+   - `head` (url) -> {status, headers, body}
+   - `options` (url) -> {status, headers, body}
+   - `post` (url, body) -> {status, headers, body}
+   - `put` (url, body) -> {status, headers, body}
+   - `patch` (url, body) -> {status, headers, body}
 
 ### Custom filters
 
-#### parse (data: binary, encoding: string) -> any
+#### parse (data, encoding) -> result
+ - `data` binary:
+ - `encoding` string:
+ - `result`:
 
-#### format (data: any, encoding: string) -> string
+#### format (data, encoding) -> text
+Converts a template variable to a formatted string.
 
-#### bytes (data: string) -> binary
+This function raises an `error` if you use an unsupported encoding or if the
+encoding fails.
+
+Returning the request with code 500 in case of error.
+
+ - `data`: Any template variable.
+ - `encoding` string: The type of encoding to be adopted when formatting the
+text. Supported encodings:
+   - form: [FormData](https://developer.mozilla.org/en-US/docs/Web/HTTP/Methods/POST)  
+   - json: [JSON](https://www.json.org/json-en.html)
+   - toml: [TOML](https://toml.io/en/)
+   - debug: Uses rust pretty print formatter.
+ - `text` string: The text after encoding.
+
+```jinja
+{% set data = {"name": "John", "age": 30} -%}
+{{ data | format("form") }}
+```
+
+Result:
+```
+name=John&age=30
+```
+
+#### bytes (data) -> raw
+Converts text to binary format.
+
+ - `data` string: Any text.
+ - `raw` binary: Text converted to binary.
+
+```jinja
+{% set error = write('hello.txt', 'Hello World!' | bytes) %}
+```
+
+```jinja
+{% set response = post('http://myip/some/api', 'Hello World!' | bytes) %}
+```
 
 ## 📦 Releases
 Currently, only binaries for generic versions of Linux are distributed across
