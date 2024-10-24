@@ -5,6 +5,7 @@ use serde_derive::Deserialize;
 use minijinja::Value;
 use axum::response::Response;
 use reqwest::{Request, RequestBuilder, Client};
+use crate::debug::debug;
 
 #[derive(Deserialize)]
 pub struct Proxy {
@@ -24,6 +25,7 @@ impl Proxy {
         let proxy = Proxy::deserialize(proxy)?;
         let method = proxy.method.unwrap_or(method.to_string());
 
+        debug(&method, &proxy.url, None, "");
         let mut r = RequestBuilder::from_parts(Client::new(),
             Request::new(method.parse()?, proxy.url.parse()?)
         );
@@ -35,8 +37,19 @@ impl Proxy {
         for (key, value) in headers.iter() {
             r = r.header(key.clone(), value.clone());
         }
-        let result = r.body(proxy.body.unwrap_or(body.to_vec()))
-            .send().await?;
+        let result = match r.body(
+            proxy.body.unwrap_or(body.to_vec())
+        ).send().await {
+            Ok(result) => {
+                debug(&method, &proxy.url, Some(result.status().as_u16()), "");
+                result
+            },
+            Err(err) => {
+                debug(&method, &proxy.url, Some(500), &err.to_string());
+                return Err(err.into());
+            }
+        };
+
 
         let mut response = Response::builder()
             .status(result.status());

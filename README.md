@@ -74,12 +74,12 @@ minirps -p 4000 path/to/static/folder
 
 ### Using https instead of http
 ```
-minirps -p 4000 path/to/static/folder -c path/to/cert.pem -k path/to/key.pem
+minirps path/to/static/folder -c path/to/cert.pem -k path/to/key.pem
 ```
 
 ### Allow [CORS](https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS) from all origins
 ```
-minirps -o -p 4000 path/to/static/folder -c path/to/cert.pem -k path/to/key.pem
+minirps -o path/to/static/folder
 ```
 
 ### Start the server with a config file
@@ -220,7 +220,7 @@ Optional integer port number to run the server on, default: 3000
 #### all: bool
 Whether to display hidden files. 
 
-In case of confirmation via the command line or `config.toml` they will be
+In case of confirmation via the command line or `config` file they will be
 displayed.
 
 #### ignore: [string]?
