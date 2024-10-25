@@ -7,19 +7,21 @@ use std::collections::HashMap;
 use minijinja::{Environment};
 use axum::{
     extract::{Path, Query, State, Request},
-    http::{StatusCode, HeaderMap, HeaderName, HeaderValue}
+    http::{StatusCode, HeaderMap, HeaderName, HeaderValue, header}
 };
 use context::Context;
 use proxy::Proxy;
 use modify::Modify;
 use crate::config::Route;
 use crate::debug::debug;
+use mime_guess;
 
 type Env = Environment<'static>;
 #[derive(Clone)]
 pub struct AppState {
     env: Env,
     route: Route,
+    mime: Option<HeaderValue>
 }
 
 impl AppState {
@@ -27,6 +29,13 @@ impl AppState {
         AppState {
             env: env.clone(),
             route: route.clone(),
+            mime: match mime_guess::from_path(&route.template).first_raw() {
+                Some(mime) => match HeaderValue::from_str(mime) {
+                    Ok(mime) => Some(mime),
+                    Err(_) => None
+                },
+                None => None
+            }
         }
     }
 
@@ -63,6 +72,8 @@ impl AppState {
                 &context.body,
                 &proxy
             ).await?;
+        } else if let Some(mime) = &self.mime {
+            headers.insert(header::CONTENT_TYPE, mime.clone());
         }
 
         if let Some(modify) = state.lookup("modify") {
