@@ -109,20 +109,20 @@ pub async fn handler (
     Path(params): Path<HashMap<String, String>>,
     Query(vars): Query<HashMap<String, String>>,
     request: Request,
-) -> Result<(StatusCode, HeaderMap, Body), (StatusCode, Body)> {
+) -> (StatusCode, HeaderMap, Body) {
     let method = request.method().as_str().to_string();
     let path = request.uri().to_string();
     debug(&method, &path, None, "");
     match state.run(params, vars, request).await {
         Ok(response) => {
             debug(&method, &path, Some(response.0.as_u16()), "");
-            Ok(response)
+            response
         },
         Err(err) => {
             let error = err.to_string();
             let status = StatusCode::INTERNAL_SERVER_ERROR;
             debug(&method, &path, Some(status.as_u16()), &error);
-            Err((status, error.into()))
+            (status, HeaderMap::new(), error.into())
         }
     }
 }
