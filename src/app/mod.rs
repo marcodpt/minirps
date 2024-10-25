@@ -7,7 +7,8 @@ use std::collections::HashMap;
 use minijinja::{Environment};
 use axum::{
     extract::{Path, Query, State, Request},
-    http::{StatusCode, HeaderMap, HeaderName, HeaderValue, header}
+    http::{StatusCode, HeaderMap, HeaderName, HeaderValue, header},
+    body::Body
 };
 use context::Context;
 use proxy::Proxy;
@@ -43,12 +44,12 @@ impl AppState {
         params: HashMap<String, String>,
         vars: HashMap<String, String>,
         request: Request
-    ) -> Result<(StatusCode, HeaderMap, Vec<u8>), Box<dyn Error>> {
+    ) -> Result<(StatusCode, HeaderMap, Body), Box<dyn Error>> {
         let context = Context::new(
             &self.route.path, params, vars, request
         ).await?;
         let tpl = self.env.get_template(&self.route.template)?;
-        let (body, state) = match tpl.render_and_return_state(&context) {
+        let (tpl, state) = match tpl.render_and_return_state(&context) {
             Ok(result) => result,
             Err(err) => {
                 let mut info = format!("Fail to render template!\n{:#}", err);
@@ -63,7 +64,7 @@ impl AppState {
 
         let mut status = StatusCode::OK;
         let mut headers = HeaderMap::new();
-        let mut body = body.as_bytes().to_vec();
+        let mut body: Body = tpl.into();
 
         if let Some(proxy) = state.lookup("proxy") {
             (status, headers, body) = Proxy::new(
@@ -108,7 +109,7 @@ pub async fn handler (
     Path(params): Path<HashMap<String, String>>,
     Query(vars): Query<HashMap<String, String>>,
     request: Request,
-) -> Result<(StatusCode, HeaderMap, Vec<u8>), (StatusCode, String)> {
+) -> Result<(StatusCode, HeaderMap, Body), (StatusCode, Body)> {
     let method = request.method().as_str().to_string();
     let path = request.uri().to_string();
     debug(&method, &path, None, "");
@@ -121,7 +122,7 @@ pub async fn handler (
             let error = err.to_string();
             let status = StatusCode::INTERNAL_SERVER_ERROR;
             debug(&method, &path, Some(status.as_u16()), &error);
-            Err((status, error))
+            Err((status, error.into()))
         }
     }
 }

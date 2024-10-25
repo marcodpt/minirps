@@ -4,6 +4,7 @@ use serde::Deserialize;
 use serde_derive::Deserialize;
 use minijinja::Value;
 use axum::http::{StatusCode, HeaderMap};
+use axum::body::Body;
 use reqwest::{Request, RequestBuilder, Client};
 use crate::debug::debug;
 
@@ -21,7 +22,7 @@ impl Proxy {
         headers: &HashMap<String, String>,
         body: &Vec<u8>,
         proxy: &Value
-    ) -> Result<(StatusCode, HeaderMap, Vec<u8>), Box<dyn Error>> {
+    ) -> Result<(StatusCode, HeaderMap, Body), Box<dyn Error>> {
         let proxy = Proxy::deserialize(proxy)?;
         let method = proxy.method.unwrap_or(method.to_string());
 
@@ -58,7 +59,7 @@ impl Proxy {
         Ok((
             response.status(),
             response.headers().clone(),
-            response.bytes().await?.to_vec()
+            response.bytes().await?.into()
         ))
     }
 }
