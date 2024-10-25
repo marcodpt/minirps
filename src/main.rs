@@ -97,7 +97,7 @@ fn init () -> Result<(Router, u16, Option<OpenSSLConfig>), Box<dyn Error>> {
             app = app.route(&route.path, on(
                 Method::from_bytes(route.method.as_bytes())?.try_into()?,
                 handler
-            ).with_state(AppState::new(&env, &route)));
+            ).with_state(AppState::new(&env, &route.template)));
         }
     }
 
@@ -147,6 +147,7 @@ async fn main() -> () {
         },
         None => {
             println!("Server started at http://localhost:{}", port);
+            println!("v2");
             axum_server::bind(addr)
                 .serve(app.into_make_service()).await
         }

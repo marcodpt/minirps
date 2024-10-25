@@ -6,14 +6,13 @@ use std::error::Error;
 use std::collections::HashMap;
 use minijinja::{Environment};
 use axum::{
-    extract::{Path, Query, State, Request},
-    http::{StatusCode, HeaderMap, HeaderName, HeaderValue, header},
-    body::Body
+    extract::{Path, Query, State, OriginalUri, MatchedPath},
+    body::{Bytes, Body},
+    http::{Method, StatusCode, HeaderMap, HeaderName, HeaderValue, header},
 };
 use context::Context;
 use proxy::Proxy;
 use modify::Modify;
-use crate::config::Route;
 use crate::debug::debug;
 use mime_guess;
 
@@ -21,16 +20,16 @@ type Env = Environment<'static>;
 #[derive(Clone)]
 pub struct AppState {
     env: Env,
-    route: Route,
+    template: String,
     mime: Option<HeaderValue>
 }
 
 impl AppState {
-    pub fn new (env: &Env, route: &Route) -> AppState {
+    pub fn new (env: &Env, template: &str) -> AppState {
         AppState {
             env: env.clone(),
-            route: route.clone(),
-            mime: match mime_guess::from_path(&route.template).first_raw() {
+            template: template.to_string(),
+            mime: match mime_guess::from_path(template).first_raw() {
                 Some(mime) => match HeaderValue::from_str(mime) {
                     Ok(mime) => Some(mime),
                     Err(_) => None
@@ -41,15 +40,10 @@ impl AppState {
     }
 
     pub async fn run (&self,
-        params: HashMap<String, String>,
-        vars: HashMap<String, String>,
-        request: Request
+        ctx: &Context
     ) -> Result<(StatusCode, HeaderMap, Body), Box<dyn Error>> {
-        let context = Context::new(
-            &self.route.path, params, vars, request
-        ).await?;
-        let tpl = self.env.get_template(&self.route.template)?;
-        let (tpl, state) = match tpl.render_and_return_state(&context) {
+        let tpl = self.env.get_template(&self.template)?;
+        let (tpl, state) = match tpl.render_and_return_state(ctx) {
             Ok(result) => result,
             Err(err) => {
                 let mut info = format!("Fail to render template!\n{:#}", err);
@@ -68,9 +62,9 @@ impl AppState {
 
         if let Some(proxy) = state.lookup("proxy") {
             (status, headers, body) = Proxy::new(
-                &context.method,
-                &context.headers,
-                &context.body,
+                &ctx.method,
+                &ctx.headers,
+                &ctx.body,
                 &proxy
             ).await?;
         } else if let Some(mime) = &self.mime {
@@ -106,22 +100,25 @@ impl AppState {
 
 pub async fn handler (
     state: State<AppState>,
+    OriginalUri(url): OriginalUri,
     Path(params): Path<HashMap<String, String>>,
     Query(vars): Query<HashMap<String, String>>,
-    request: Request,
+    route: MatchedPath,
+    headers: HeaderMap,
+    method: Method,
+    body: Bytes,
 ) -> (StatusCode, HeaderMap, Body) {
-    let method = request.method().as_str().to_string();
-    let path = request.uri().to_string();
-    debug(&method, &path, None, "");
-    match state.run(params, vars, request).await {
+    let ctx = Context::new(route, params, vars, method, url, headers, body);
+    debug(&ctx.method, &ctx.url, None, "");
+    match state.run(&ctx).await {
         Ok(response) => {
-            debug(&method, &path, Some(response.0.as_u16()), "");
+            debug(&ctx.method, &ctx.url, Some(response.0.as_u16()), "");
             response
         },
         Err(err) => {
             let error = err.to_string();
             let status = StatusCode::INTERNAL_SERVER_ERROR;
-            debug(&method, &path, Some(status.as_u16()), &error);
+            debug(&ctx.method, &ctx.url, Some(status.as_u16()), &error);
             (status, HeaderMap::new(), error.into())
         }
     }

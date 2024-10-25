@@ -21,7 +21,7 @@ categories = ["web-programming::http-server"]
 openssl = { version = "0.10", features = ["vendored"] }
 tokio = { version = "1", features = ["full"] }
 tower-http = { version = "0", features = ["cors"] }
-axum = { version = "0", features = ["original-uri", "query"] }
+axum = { version = "0", features = ["matched-path", "original-uri", "query"] }
 axum-server = { version = "0", features = ["tls-openssl"] }
 clap = {version = "4", features = ["derive"]}
 toml = "0"
