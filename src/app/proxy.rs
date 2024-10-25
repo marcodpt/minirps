@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use serde::Deserialize;
 use serde_derive::Deserialize;
 use minijinja::Value;
-use axum::response::Response;
+use axum::http::{StatusCode, HeaderMap};
 use reqwest::{Request, RequestBuilder, Client};
 use crate::debug::debug;
 
@@ -21,7 +21,7 @@ impl Proxy {
         headers: &HashMap<String, String>,
         body: &Vec<u8>,
         proxy: &Value
-    ) -> Result<Response, Box<dyn Error>> {
+    ) -> Result<(StatusCode, HeaderMap, Vec<u8>), Box<dyn Error>> {
         let proxy = Proxy::deserialize(proxy)?;
         let method = proxy.method.unwrap_or(method.to_string());
 
@@ -30,19 +30,24 @@ impl Proxy {
             Request::new(method.parse()?, proxy.url.parse()?)
         );
         if let Some(headers) = proxy.headers {
-            for (key, value) in headers.iter() {
-                r = r.header(key, value);
+            for (name, value) in headers.iter() {
+                r = r.header(name, value);
             }
         }
-        for (key, value) in headers.iter() {
-            r = r.header(key.clone(), value.clone());
+        for (name, value) in headers.iter() {
+            r = r.header(name.clone(), value.clone());
         }
-        let result = match r.body(
+        let response = match r.body(
             proxy.body.unwrap_or(body.to_vec())
         ).send().await {
-            Ok(result) => {
-                debug(&method, &proxy.url, Some(result.status().as_u16()), "");
-                result
+            Ok(response) => {
+                debug(
+                    &method,
+                    &proxy.url,
+                    Some(response.status().as_u16()),
+                    ""
+                );
+                response
             },
             Err(err) => {
                 debug(&method, &proxy.url, Some(500), &err.to_string());
@@ -50,14 +55,10 @@ impl Proxy {
             }
         };
 
-
-        let mut response = Response::builder()
-            .status(result.status());
-
-        for (key, value) in result.headers().iter() {
-            response = response.header(key, value);
-        }
-
-        Ok(response.body(result.bytes().await?.into())?)
+        Ok((
+            response.status(),
+            response.headers().clone(),
+            response.bytes().await?.to_vec()
+        ))
     }
 }

@@ -6,9 +6,8 @@ use std::error::Error;
 use std::collections::HashMap;
 use minijinja::{Environment};
 use axum::{
-    response::Response,
     extract::{Path, Query, State, Request},
-    http::StatusCode
+    http::{StatusCode, HeaderMap, HeaderName, HeaderValue}
 };
 use context::Context;
 use proxy::Proxy;
@@ -35,7 +34,7 @@ impl AppState {
         params: HashMap<String, String>,
         vars: HashMap<String, String>,
         request: Request
-    ) -> Result<Response, Box<dyn Error>> {
+    ) -> Result<(StatusCode, HeaderMap, Vec<u8>), Box<dyn Error>> {
         let context = Context::new(
             &self.route.path, params, vars, request
         ).await?;
@@ -53,34 +52,43 @@ impl AppState {
             }
         };
 
+        let mut status = StatusCode::OK;
+        let mut headers = HeaderMap::new();
+        let mut body = body.as_bytes().to_vec();
+
         if let Some(proxy) = state.lookup("proxy") {
-            Proxy::new(
+            (status, headers, body) = Proxy::new(
                 &context.method,
                 &context.headers,
                 &context.body,
                 &proxy
-            ).await
-        } else {
-            let mut response = Response::builder()
-                .status(200)
-                .header("content-type", "text/html");
+            ).await?;
+        }
 
-            if let Some(modify) = state.lookup("modify") {
-                if let Ok(modify) = Modify::new(&modify) {
-                    if let Some(status) = modify.status {
-                        response = response.status(status);
+        if let Some(modify) = state.lookup("modify") {
+            if let Ok(modify) = Modify::new(&modify) {
+                if let Some(modify_status) = modify.status {
+                    if let Ok(
+                        modify_status
+                    ) = StatusCode::from_u16(modify_status) {
+                        status = modify_status;
                     }
+                }
 
-                    if let Some(headers) = modify.headers {
-                        for (key, value) in headers.iter() {
-                            response = response.header(key, value);
+                if let Some(modify_headers) = modify.headers {
+                    for (name, value) in modify_headers.iter() {
+                        if let (Ok(name), Ok(value)) = (
+                            HeaderName::from_bytes(name.as_bytes()),
+                            HeaderValue::from_str(value)
+                        ) {
+                            headers.insert(name, value);
                         }
                     }
                 }
             }
-
-            Ok(response.body(body.into())?)
         }
+
+        Ok((status, headers, body))
     }
 }
 
@@ -89,19 +97,20 @@ pub async fn handler (
     Path(params): Path<HashMap<String, String>>,
     Query(vars): Query<HashMap<String, String>>,
     request: Request,
-) -> Result<Response, (StatusCode, String)> {
+) -> Result<(StatusCode, HeaderMap, Vec<u8>), (StatusCode, String)> {
     let method = request.method().as_str().to_string();
     let path = request.uri().to_string();
     debug(&method, &path, None, "");
     match state.run(params, vars, request).await {
         Ok(response) => {
-            debug(&method, &path, Some(200), "");
+            debug(&method, &path, Some(response.0.as_u16()), "");
             Ok(response)
         },
         Err(err) => {
             let error = err.to_string();
-            debug(&method, &path, Some(500), &error);
-            Err((StatusCode::INTERNAL_SERVER_ERROR, error))
+            let status = StatusCode::INTERNAL_SERVER_ERROR;
+            debug(&method, &path, Some(status.as_u16()), &error);
+            Err((status, error))
         }
     }
 }
