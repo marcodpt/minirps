@@ -1,6 +1,6 @@
 [package]
 name = "minirps"
-version = "0.2.0"
+version = "0.2.1"
 edition = "2021"
 authors = ["Marco Di Pillo Tomic <marcodpt@protonmail.com>"]
 license = "MIT"

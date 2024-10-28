@@ -167,7 +167,7 @@ Here it was implemented:
  - Form Data: Sending and reading examples.
  - CORS: A working demo of a CORS request, needs both servers running. 
 
-### test
+### Test
 In this example, a static server and some routes are built to test the use of
 reverse proxy and templates automatically using
 [hurl](https://github.com/Orange-OpenSource/hurl).
