@@ -67,6 +67,7 @@ impl AppState {
                 &ctx.body,
                 &proxy
             ).await?;
+            headers.remove(header::TRANSFER_ENCODING);
         } else if let Some(mime) = &self.mime {
             headers.insert(header::CONTENT_TYPE, mime.clone());
         }
@@ -92,6 +93,10 @@ impl AppState {
                     }
                 }
             }
+        }
+
+        if let Ok(server) = HeaderValue::from_str("minirps") {
+            headers.insert(header::SERVER, server);
         }
 
         Ok((status, headers, body))

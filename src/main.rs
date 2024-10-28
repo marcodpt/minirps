@@ -147,7 +147,6 @@ async fn main() -> () {
         },
         None => {
             println!("Server started at http://localhost:{}", port);
-            println!("v2");
             axum_server::bind(addr)
                 .serve(app.into_make_service()).await
         }
