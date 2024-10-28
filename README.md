@@ -262,9 +262,10 @@ Optional string with the path to the
 Optional string with the path where templates can `read`, `write` and `remove`
 files. If not passed, these functions will be unavailable to templates.
 
-#### routes: [{method: string, path: string, template: string}]
-Optional array of objects that define [reverse proxy](https://en.wikipedia.org/wiki/Reverse_proxy) routes:
- - `method` is a string with one of the http methods:
+#### routes: [{method, path, template}]
+Optional array of objects that define routes:
+
+ - `method` string: one of the http methods:
    - GET
    - POST
    - DELETE
@@ -274,9 +275,9 @@ Optional array of objects that define [reverse proxy](https://en.wikipedia.org/w
    - OPTIONS
    - TRACE
    - CONNECT
- - `path` is a string with the path associated with the route, `:var` is
+ - `path` string: the path associated with the route, `:var` is
 acceptable for setting path variables (ex: /api/user/:id).
- - `template` is the template path associated with this route within the
+ - `template` string: the template path associated with this route within the
 `templates` folder.
 
 ### Template variables
@@ -313,16 +314,22 @@ The associated `query` string passed by the client in the request.
 http://localhost:3000/api/users?name=john => name=john
 ```
 
-#### params: {param: string}
+#### params: {name: value}
 The associated object of the `path` `params` associated with the client
 request on a given `route`.
+
+ - `name` string: The name of the parameter as declared in the `route`.
+ - `value` string: The value of the parameter passed in the `path`.
 
 ```
 /api/user/:id => http://localhost:3000/api/user/25 => {"id": "25"}
 ```
 
-#### vars: {param: string}
+#### vars: {name: value}
 The associated object of the `query` params associated with the client request.
+
+ - `name` string: The name of the parameter passed in the `query`.
+ - `value` string: The value of the parameter passed in the `query`.
 
 ```
 http://localhost:3000/api/users?name=john => {"name": "john"}
@@ -332,6 +339,9 @@ http://localhost:3000/api/users?name=john => {"name": "john"}
 The associated object of the headers passed by the client in the request.
 
 Note that all header keys are in **lowercase**.
+
+ - `name` string: The name of the header passed in the request.
+ - `value` string: The value of the header passed in the request.
 
 ```
 Content-Type: text/plain => {"content-type": "text/plain"}
