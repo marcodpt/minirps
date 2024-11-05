@@ -1,0 +1,2 @@
+{{write("site.json", body | parse("form") | format("json") | bytes)}}
+{% set modify = {"status": 303, "headers": {"Location": "/"}} %}

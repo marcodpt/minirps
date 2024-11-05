@@ -49,8 +49,7 @@
       </div>
     </nav>
     <main class="container my-5">
-      <h1>{{site.title}}</h1>
-      <p class="lead">{{site.description}}</p>
+      <h1>{{site.description}}</h1>
       <form method="POST" action="/">
         {% set schema = read('schema.json') | parse('json') %}
         {% set P = schema.properties %}
@@ -72,6 +71,12 @@
           </div>
         </div>
         {% endfor %}
+        <div class="btn-group w-100">
+          <button class="btn btn-primary" type="submit">
+            <i class="fa-solid fa-check"></i>
+            Submit
+          </button>
+        </div>
       </form>
     </main>
     {% if site.footer -%}

@@ -1,10 +1,10 @@
 {
-  "title": "Mini RPS",
-  "description": "Site builder.",
-  "lang": "en",
-  "theme": "",
+  "description": "Site builder",
+  "footer": "text-bg-light",
+  "height": "24",
   "icon": "favicon.ico",
-  "height": 24,
+  "lang": "en",
   "navbar": "bg-light navbar-light",
-  "footer": "text-bg-light"
+  "theme": "",
+  "title": "Mini RPS"
 }
