@@ -62,12 +62,26 @@
             >{{P[k].title}}</label>
           </div>
           <div class="col-sm-9">
+            {% if P[k].options %}
+            <select name="{{k}}" class="form-control">
+              {% for o in P[k].options -%}
+              <option
+                value="{{o.value}}"
+                label="{{o.label}}"
+                {% if o.value == site[k] -%}
+                selected
+                {%- endif %}
+              ></option>
+              {%- endfor %}
+            </select>
+            {% else %}
             <input
               class="form-control"
               name="{{k}}"
               type="string"
               value="{{site[k]}}"
             >
+            {% endif %}
           </div>
         </div>
         {% endfor %}

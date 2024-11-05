@@ -19,7 +19,35 @@
     "theme": {
       "type": "string",
       "title": "Theme",
-      "description": "Bootswatch theme."
+      "description": "Bootswatch theme.",
+      "options": [
+        {"value": "", "label": "Default"},
+        {"value": "cerulean", "label": "Cerulean"},
+        {"value": "cosmo", "label": "Cosmo"},
+        {"value": "cyborg", "label": "Cyborg"},
+        {"value": "darkly", "label": "Darkly"},
+        {"value": "flatly", "label": "Flatly"},
+        {"value": "journal", "label": "Journal"},
+        {"value": "litera", "label": "Litera"},
+        {"value": "lumen", "label": "Lumen"},
+        {"value": "lux", "label": "Lux"},
+        {"value": "materia", "label": "Materia"},
+        {"value": "minty", "label": "Minty"},
+        {"value": "morph", "label": "Morph"},
+        {"value": "pulse", "label": "Pulse"},
+        {"value": "quartz", "label": "Quartz"},
+        {"value": "sandstone", "label": "Sandstone"},
+        {"value": "simplex", "label": "Simplex"},
+        {"value": "sketchy", "label": "Sketchy"},
+        {"value": "slate", "label": "Slate"},
+        {"value": "solar", "label": "Solar"},
+        {"value": "spacelab", "label": "Spacelab"},
+        {"value": "superhero", "label": "Superhero"},
+        {"value": "united", "label": "United"},
+        {"value": "vapor", "label": "Vapor"},
+        {"value": "yeti", "label": "Yeti"},
+        {"value": "zephyr", "label": "Zephyr"}
+      ]
     },
     "icon": {
       "type": "string",
@@ -34,12 +62,41 @@
     "navbar": {
       "type": "string",
       "title": "Navbar",
-      "description": "Navbar theme."
+      "description": "Navbar theme.",
+      "options": [
+        {"value": "bg-dark navbar-dark", "label": "Dark"},
+        {"value": "bg-dark navbar-light", "label": "Dark Inverted"},
+        {"value": "bg-light navbar-light", "label": "Light"},
+        {"value": "bg-light navbar-dark", "label": "Light Inverted"},
+        {"value": "bg-primary navbar-dark", "label": "Primary"},
+        {"value": "bg-primary navbar-light", "label": "Primary Inverted"},
+        {"value": "bg-secondary navbar-dark", "label": "Secondary"},
+        {"value": "bg-secondary navbar-light", "label": "Secondary Inverted"},
+        {"value": "bg-success navbar-dark", "label": "Success"},
+        {"value": "bg-success navbar-light", "label": "Success Inverted"},
+        {"value": "bg-danger navbar-dark", "label": "Danger"},
+        {"value": "bg-danger navbar-light", "label": "Danger Inverted"},
+        {"value": "bg-warning navbar-dark", "label": "Warning"},
+        {"value": "bg-warning navbar-light", "label": "Warning Inverted"},
+        {"value": "bg-info navbar-dark", "label": "Info"},
+        {"value": "bg-info navbar-light", "label": "Info Inverted"}
+      ]
     },
     "footer": {
       "type": "string",
       "title": "Footer",
-      "description": "Footer theme."
+      "description": "Footer theme.",
+      "options": [
+        {"value": "text-body-secondary", "label": "Raw"},
+        {"value": "text-bg-dark", "label": "Dark"},
+        {"value": "text-bg-light", "label": "Light"},
+        {"value": "text-bg-primary", "label": "Primary"},
+        {"value": "text-bg-secondary", "label": "Secondary"},
+        {"value": "text-bg-success", "label": "Success"},
+        {"value": "text-bg-danger", "label": "Danger"},
+        {"value": "text-bg-warning", "label": "Warning"},
+        {"value": "text-bg-info", "label": "Info"}
+      ]
     }
   },
   "required": [
