@@ -1,0 +1,16 @@
+{
+  "data": "data",
+  "assets": "assets",
+  "templates": "templates",
+  "routes": [
+    {
+      "method": "GET",
+      "path": "/",
+      "template": "index.html"
+    }, {
+      "method": "POST",
+      "path": "/",
+      "template": "post.html"
+    }
+  ]
+}

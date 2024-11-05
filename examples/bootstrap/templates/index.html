@@ -1,0 +1,96 @@
+{% set site = read('site.json') | parse('json') %}
+<!DOCTYPE html>
+<html lang="{{site.lang}}">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{{site.title}}</title>
+    <meta name="description" content="{{site.description}}">
+    <link rel="icon" href="{{site.icon}}" sizes="any">
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
+      integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A=="
+      crossorigin="anonymous"
+      referrerpolicy="no-referrer"
+    >
+    <link
+      rel="stylesheet"
+      {% if site.theme -%}
+      href="https://cdn.jsdelivr.net/npm/bootswatch@5.3.3/dist/{{site.theme}}/bootstrap.min.css"
+      {%- else -%}
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+      {%- endif %}
+    >
+    <script
+      src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
+      integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
+      crossorigin="anonymous"
+    ></script>
+  </head>
+  <body class="min-vh-100 d-flex flex-column">
+    <nav class="navbar {{site.navbar}}">
+      <div class="container-fluid">
+        <a
+          class="navbar-brand"
+          href="#/"
+          title="{{site.description}}"
+        >
+          {% if site.height %}
+          <img
+            src="{{site.icon}}"
+            alt="{{site.title}}"
+            height="{{site.height}}"
+          >
+          {% endif %}
+          {{site.title}}
+        </a>
+      </div>
+    </nav>
+    <main class="container my-5">
+      <h1>{{site.title}}</h1>
+      <p class="lead">{{site.description}}</p>
+      <form method="POST" action="/">
+        {% set schema = read('schema.json') | parse('json') %}
+        {% set P = schema.properties %}
+        {% for k in schema.required %}
+        <div class="col-12 my-1 row">
+          <div class="col-sm-3">
+            <label
+              class="form-label"
+              title="{{P[k].description}}"
+            >{{P[k].title}}</label>
+          </div>
+          <div class="col-sm-9">
+            <input
+              class="form-control"
+              name="{{k}}"
+              type="string"
+              value="{{site[k]}}"
+            >
+          </div>
+        </div>
+        {% endfor %}
+      </form>
+    </main>
+    {% if site.footer -%}
+    <footer class="{{site.footer}} mt-auto pt-4 pb-3">
+      <p class="text-center">
+        Made with ❤️ with
+        <a
+          href="https://github.com/marcodpt/minirps"
+          target="_blank"
+          class="text-reset text-decoration-none"
+        >
+          <img height="16" class="mb-1" src="favicon.ico">
+          Mini RPS
+          <sup>
+            <i class="small fa-solid fa-arrow-up-right-from-square"></i>
+          </sup>
+        </a>
+      </p>
+    </footer>
+    {%- endif %}
+  </body>
+</html>

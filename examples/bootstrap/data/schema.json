@@ -1,0 +1,55 @@
+{
+  "type": "object",
+  "properties": {
+    "title": {
+      "type": "string",
+      "title": "Title",
+      "description": "Site title."
+    },
+    "description": {
+      "type": "string",
+      "title": "Description",
+      "description": "Site description."
+    },
+    "lang": {
+      "type": "string",
+      "title": "Language",
+      "description": "Site language."
+    },
+    "theme": {
+      "type": "string",
+      "title": "Theme",
+      "description": "Bootswatch theme."
+    },
+    "icon": {
+      "type": "string",
+      "title": "Icon",
+      "description": "Site icon."
+    },
+    "height": {
+      "type": "integer",
+      "title": "Height (px)",
+      "description": "Icon height in pixels."
+    },
+    "navbar": {
+      "type": "string",
+      "title": "Navbar",
+      "description": "Navbar theme."
+    },
+    "footer": {
+      "type": "string",
+      "title": "Footer",
+      "description": "Footer theme."
+    }
+  },
+  "required": [
+    "title",
+    "description",
+    "lang",
+    "theme",
+    "icon",
+    "height",
+    "navbar",
+    "footer"
+  ]
+}
