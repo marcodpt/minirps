@@ -402,7 +402,7 @@ number greater than zero the error code.
  - `stderr` binary: The error message returned.
 
 List files in the current directory on UNIX systems.
-```
+```jinja
 {% set res = command("ls -l") %}
 {% set output = res.stdout | parse("text") %}
 ```
