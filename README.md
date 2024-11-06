@@ -403,7 +403,7 @@ number greater than zero the error code.
 
 List files in the current directory on UNIX systems.
 ```
-{% set res = command("ls -l")%}
+{% set res = command("ls -l") %}
 {% set output = res.stdout | parse("text") %}
 ```
 
@@ -521,7 +521,7 @@ Prints a message from the template on the terminal.
  - `message` string: The content of the message.
 
 ```jinja
-{{ message("hi!") }}
+{{ log("hi!") }}
 ```
 
 ### Custom filters
